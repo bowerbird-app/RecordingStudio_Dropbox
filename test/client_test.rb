@@ -417,6 +417,36 @@ class ClientTest < Minitest::Test
     assert_equal "upload io must be a String or respond to read", error.message
   end
 
+  def test_upload_passes_readable_io_through_without_reading_up_front
+    captured = []
+    start = json_ok("session_id" => "sess-stream")
+    finish = json_ok(".tag" => "file", "id" => "id:stream", "name" => "stream.bin", "path_display" => "/stream.bin")
+    requests = [
+      { path: "/2/files/upload_session/start", response: start, capture: captured },
+      { path: "/2/files/upload_session/finish", response: finish, capture: captured }
+    ]
+    reads = []
+    io = Object.new
+    io.define_singleton_method(:read) do |length = nil|
+      reads << length
+      case reads.size
+      when 1 then "abcd"
+      when 2 then "e"
+      else ""
+      end
+    end
+
+    stub_http(requests) do
+      uploaded = client.upload_file(path: "/stream.bin", io: io, chunk_size: 4)
+
+      assert_equal "id:stream", uploaded.id
+    end
+
+    assert_equal [4, 4, 4], reads
+    assert_equal "abcd", captured[0][:body]
+    assert_equal "e", captured[1][:body]
+  end
+
   def test_non_json_failure_raises_request_error
     response = http_response(code: 504, body: "gateway timeout")
 

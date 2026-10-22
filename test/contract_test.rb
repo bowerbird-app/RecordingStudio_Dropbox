@@ -32,6 +32,7 @@ class ContractTest < Minitest::Test
     assert_nil page.next_cursor
     refute page.more?
     refute RecordingStudioDropbox::Page.new(entries: [], next_cursor: "").more?
+    assert RecordingStudioDropbox::Page.new(entries: [], next_cursor: :more).more?
   end
 
   def test_downloaded_file_shape

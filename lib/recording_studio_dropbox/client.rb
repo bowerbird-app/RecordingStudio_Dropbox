@@ -49,7 +49,7 @@ module RecordingStudioDropbox
     def upload_file(path:, io:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
       Upload.new(transport: @transport).call(
         path: normalize_entry_path(path),
-        io: StringIO.new(read_io(io).to_s.b),
+        io: binary_io(io),
         chunk_size: chunk_size
       )
     end
@@ -88,9 +88,12 @@ module RecordingStudioDropbox
       File.basename(path)
     end
 
-    def read_io(io)
-      return io if io.instance_of?(String)
-      return io.read if io.respond_to?(:read)
+    def binary_io(io)
+      return StringIO.new(io.b) if io.instance_of?(String)
+      if io.respond_to?(:read)
+        io.binmode if io.respond_to?(:binmode)
+        return io
+      end
 
       raise ArgumentError, "upload io must be a String or respond to read"
     end
