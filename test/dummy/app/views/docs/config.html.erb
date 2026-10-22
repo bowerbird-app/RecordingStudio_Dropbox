@@ -3,14 +3,18 @@
 <div class="flex w-full flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Config",
-    subtitle: "Replace this placeholder with the configuration settings your generated gem exposes.",
+    subtitle: "This gem keeps host configuration on RecordingStudioDropbox.configuration.hooks.",
     variant: :h1
   ) %>
 
   <%= render FlatPack::CodeBlock::Component.new(
     language: :ruby,
     code: <<~'CODE'
-      # Add the config settings for the gem here.
+      RecordingStudioDropbox.configure do |config|
+        config.hooks.on(:after_initialize) do |_engine|
+          # Host-only hook. The Dropbox client takes a token provider, not YAML keys.
+        end
+      end
     CODE
   ) %>
 </div>

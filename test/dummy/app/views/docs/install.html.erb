@@ -3,19 +3,34 @@
 <div class="flex w-full flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Install",
-    subtitle: "Host-app setup for the mounted GemTemplate engine and its sample migrations.",
+    subtitle: "Add the gem and run the install generator.",
     variant: :h1
   ) %>
 
   <%= render FlatPack::SectionTitle::Component.new(
     title: "Step 1",
-    subtitle: "Provide one section title for each step",
+    subtitle: "Add recording_studio_dropbox to the host Gemfile",
+  ) %>
+
+  <%= render FlatPack::CodeBlock::Component.new(
+    language: :ruby,
+    code: <<~CODE
+      gem "recording_studio_dropbox",
+          github: "bowerbird-app/RecordingStudio_Dropbox",
+          tag: "v0.1.0"
+    CODE
+  ) %>
+
+  <%= render FlatPack::SectionTitle::Component.new(
+    title: "Step 2",
+    subtitle: "Install the initializer",
   ) %>
 
   <%= render FlatPack::CodeBlock::Component.new(
     language: :bash,
     code: <<~CODE
-      # Put the step instruction here.
+      bundle install
+      bin/rails generate recording_studio_dropbox:install
     CODE
   ) %>
 </div>

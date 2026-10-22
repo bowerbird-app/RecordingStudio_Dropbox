@@ -3,30 +3,28 @@
 <div class="flex w-full flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
     title: "Methods",
-    subtitle: "Document the public methods your addon exposes.",
+    subtitle: "Public methods on RecordingStudioDropbox::Client.",
     variant: :h1
   ) %>
 
   <%= render FlatPack::SectionTitle::Component.new(
-    title: "Example method",
-    subtitle: "recordingstudio_addon.example_method",
+    title: "Create a client",
+    subtitle: "RecordingStudioDropbox::Client.new",
   ) %>
 
   <%= render FlatPack::CodeBlock::Component.new(
     language: :ruby,
     code: <<~'CODE'
-      # Explain what this method does before the example.
-      result = RecordingstudioAddon.example_method(
-        # Replace with the real arguments this method accepts.
-        input: "demo value"
+      client = RecordingStudioDropbox::Client.new(
+        token_provider: -> { connection.access_token }
       )
 
-      # Show what the method returns or what side effect it creates.
-      puts result
+      listing = client.list_folder(path: "")
+      file = client.download(path: listing.entries.first.id)
     CODE
   ) %>
 
   <p class="text-sm text-(--body-muted-content-color)">
-    Provide one section title and codeblock for each method
+    See the product README for search, upload, and reconnect errors.
   </p>
 </div>

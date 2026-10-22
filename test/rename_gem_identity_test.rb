@@ -3,7 +3,7 @@
 require "test_helper"
 
 class RenameGemIdentityTest < Minitest::Test
-  def test_rename_script_rewrites_leftover_template_homepages
+  def test_rename_script_still_rewrites_template_homepages
     script = File.read(File.expand_path("../bin/rename_gem", __dir__))
 
     assert_includes script, "https://github.com/bowerbird-app/RecordingStudio_gem_template"

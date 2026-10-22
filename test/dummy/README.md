@@ -1,6 +1,6 @@
 # Dummy App
 
-This Rails app exists to validate the Recording Studio addon template in a real host application.
+This Rails app exists to validate the Recording Studio Dropbox gem in a real host application.
 
 ## What It Covers
 

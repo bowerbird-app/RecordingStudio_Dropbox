@@ -25,19 +25,17 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     get docs_install_path
     assert_response :success
     assert_select "h1", text: "Install"
-    assert_includes response.body, "Step 1"
-    assert_includes response.body, "Provide one section title for each step"
-    assert_includes response.body, "# Put the step instruction here."
+    assert_includes response.body, "Add the gem and run the install generator."
+    assert_includes response.body, "recording_studio_dropbox"
+    assert_includes response.body, "bin/rails generate recording_studio_dropbox:install"
   end
 
   test "config page renders successfully" do
     get docs_config_path
     assert_response :success
     assert_select "h1", text: "Config"
-    expected_placeholder = "Replace this placeholder with the configuration settings your generated gem exposes."
-
-    assert_includes response.body, expected_placeholder
-    assert_includes response.body, "# Add the config settings for the gem here."
+    assert_includes response.body, "This gem keeps host configuration on RecordingStudioDropbox.configuration.hooks."
+    assert_includes response.body, "RecordingStudioDropbox.configure"
   end
 
   test "recordable types page renders configured recordables dynamically" do
@@ -99,18 +97,17 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", text: "Gem Views"
     assert_select "table", minimum: 1
-    refute_includes response.body, "app/views/gem_template/home/index.html.erb"
+    refute_includes response.body, "app/views/recording_studio_dropbox/home/index.html.erb"
   end
 
   test "methods page renders successfully" do
     get docs_methods_path
     assert_response :success
     assert_select "h1", text: "Methods"
-    assert_includes response.body, "Document the public methods your addon exposes."
-    assert_includes response.body, "Example method"
-    assert_includes response.body, "recordingstudio_addon.example_method"
-    assert_includes response.body, "# Explain what this method does before the example."
-    assert_includes response.body, "Provide one section title and codeblock for each method"
+    assert_includes response.body, "Public methods on RecordingStudioDropbox::Client."
+    assert_includes response.body, "RecordingStudioDropbox::Client.new"
+    assert_includes response.body, "token_provider"
+    assert_includes response.body, "list_folder"
   end
 
   test "authenticated docs pages use the recording studio default layout" do
