@@ -90,6 +90,7 @@ module RecordingStudioDropbox
 
     def binary_io(io)
       return StringIO.new(io.b) if io.instance_of?(String)
+
       if io.respond_to?(:read)
         io.binmode if io.respond_to?(:binmode)
         return io
