@@ -10,19 +10,23 @@ It does not register an Attachable upload source in this release. That work is a
 
 | Method | Dropbox endpoints |
 | --- | --- |
-| `list_folder` | `/2/files/list_folder` and `/2/files/list_folder/continue` |
+| `list` | `/2/files/list_folder` and `/2/files/list_folder/continue` |
 | `search` | `/2/files/search_v2` and `/2/files/search/continue_v2` |
-| `metadata` | `/2/files/get_metadata` |
+| `fetch_file` | `/2/files/get_metadata` |
 | `download` | `/2/files/download` |
 | `upload_file` | `/2/files/upload`, or a session (`start`, `append_v2`, `finish`) when the body is larger than 8 MiB |
 
-`list_folder(path:, cursor:, page_size:)` and `search(query:, cursor:, page_size:)` return a `Page` with `entries`, `next_cursor` (nil when there are no more pages), and `more?` (`false` for a nil or empty cursor). Pass `cursor:` to fetch the next page. `upload_file` takes a required `content_type:` argument to match the Google Drive client; Dropbox ignores it.
+`list(path:, cursor:, page_size:)` and `search(query:, cursor:, page_size:)` return a `Page` with `entries`, `next_cursor` (nil when there are no more pages), and `more?` (`false` for a nil or empty cursor). Pass `cursor:` to fetch the next page. `search` is not folder-scoped: it has no `path:`. `upload_file(path:, io:)` takes an IO (or a String, the same as Google Drive's `read_io`) and does not take `content_type:`, because Dropbox does not use a MIME type on upload.
 
 Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`. `content_type` is always `nil`, because Dropbox does not give a real MIME type.
 
 HTTP uses `Net::HTTP`, the same client Recording Studio Attachable uses for Dropbox today. There is no Dropbox SDK.
 
 Scopes this client needs are `files.metadata.read`, `files.content.read`, and `files.content.write`.
+
+## Shared shape with Google Drive
+
+This client uses the same method names as RecordingStudio Google Drive: `list`, `search`, `fetch_file`, `download`, and `upload_file`. Locators stay provider-native. Dropbox takes `path:` (a Dropbox path, or an `id:`, `ns:`, or `rev:` prefix). Google Drive takes Drive ids (`parent_id`, `file_id`). `search` is the same on both gems: query plus cursor paging, not a folder locator. `upload_file` takes `io:` on both. Google Drive also requires `content_type:`; Dropbox omits it because the Dropbox upload API does not use it.
 
 ## Access token
 
@@ -38,7 +42,7 @@ An object that implements `access_token` also works:
 
 ```ruby
 client = RecordingStudioDropbox::Client.new(token_provider: connection)
-client.list_folder(path: "")
+client.list(path: "")
 ```
 
 Tests pass a callable provider and stub `Net::HTTP`.

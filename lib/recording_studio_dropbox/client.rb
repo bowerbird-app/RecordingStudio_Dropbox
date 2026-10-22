@@ -12,7 +12,7 @@ module RecordingStudioDropbox
       @transport = Transport.new(token_provider: token_provider)
     end
 
-    def list_folder(path: "", cursor: nil, page_size: nil)
+    def list(path: "", cursor: nil, page_size: nil)
       if cursor
         page_from_folder(@transport.post_json("/2/files/list_folder/continue", { cursor: cursor }))
       else
@@ -32,7 +32,7 @@ module RecordingStudioDropbox
       end
     end
 
-    def metadata(path:)
+    def fetch_file(path:)
       Entry.from_api(@transport.post_json("/2/files/get_metadata", { path: normalize_entry_path(path) }))
     end
 
@@ -46,11 +46,10 @@ module RecordingStudioDropbox
       )
     end
 
-    def upload_file(path:, content:, content_type:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
-      _shared_content_type = content_type
+    def upload_file(path:, io:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
       Upload.new(transport: @transport).call(
         path: normalize_entry_path(path),
-        io: content_io(content),
+        io: StringIO.new(read_io(io).to_s.b),
         chunk_size: chunk_size
       )
     end
@@ -89,11 +88,11 @@ module RecordingStudioDropbox
       File.basename(path)
     end
 
-    def content_io(content)
-      return StringIO.new(content.b) if content.is_a?(String)
+    def read_io(io)
+      return io if io.instance_of?(String)
+      return io.read if io.respond_to?(:read)
 
-      content.binmode if content.respond_to?(:binmode)
-      content
+      raise ArgumentError, "upload io must be a String or respond to read"
     end
 
     def normalize_folder_path(path)

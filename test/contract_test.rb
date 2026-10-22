@@ -49,18 +49,25 @@ class ContractTest < Minitest::Test
     assert_equal [%i[keyreq token_provider]], client.instance_method(:initialize).parameters
     assert_equal(
       [%i[key path], %i[key cursor], %i[key page_size]],
-      client.instance_method(:list_folder).parameters
+      client.instance_method(:list).parameters
     )
     assert_equal(
       [%i[keyreq query], %i[key cursor], %i[key page_size]],
       client.instance_method(:search).parameters
     )
-    assert_equal [%i[keyreq path]], client.instance_method(:metadata).parameters
+    refute_includes client.instance_method(:search).parameters, %i[key path]
+    refute_includes client.instance_method(:search).parameters, %i[keyreq path]
+    assert_equal [%i[keyreq path]], client.instance_method(:fetch_file).parameters
     assert_equal [%i[keyreq path]], client.instance_method(:download).parameters
     assert_equal(
-      [%i[keyreq path], %i[keyreq content], %i[keyreq content_type], %i[key chunk_size]],
-      client.instance_method(:upload_file).parameters
+      [%i[keyreq path], %i[keyreq io], %i[key chunk_size]],
+      client.instance_method(:upload_file).parameters,
+      "Dropbox upload_file omits content_type:; Google Drive requires it because Drive sends a MIME type"
     )
+    refute_includes client.instance_method(:upload_file).parameters.flatten, :content_type
+    refute_includes client.instance_method(:upload_file).parameters.flatten, :content
+    refute client.method_defined?(:list_folder)
+    refute client.method_defined?(:metadata)
   end
 
   def test_configure_returns_configuration

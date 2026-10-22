@@ -8,7 +8,7 @@ require "test_helper"
 class ClientTest < Minitest::Test
   UNICODE_PATH = "/Résumé/naïve.pdf"
 
-  def test_list_folder_returns_entries_and_cursor
+  def test_list_returns_entries_and_cursor
     captured = []
     body = {
       "entries" => [
@@ -26,7 +26,7 @@ class ClientTest < Minitest::Test
     }
 
     stub_http([{ path: "/2/files/list_folder", response: json_ok(body), capture: captured }]) do
-      page = client.list_folder(path: "  Docs  ", page_size: 25)
+      page = client.list(path: "  Docs  ", page_size: 25)
 
       assert_equal "cur-1", page.next_cursor
       assert page.more?
@@ -40,12 +40,12 @@ class ClientTest < Minitest::Test
     assert_equal "api.dropboxapi.com", captured.first[:host]
   end
 
-  def test_list_folder_continues_with_a_cursor
+  def test_list_continues_with_a_cursor
     captured = []
     body = { "entries" => [], "cursor" => "cur-2", "has_more" => false }
 
     stub_http([{ path: "/2/files/list_folder/continue", response: json_ok(body), capture: captured }]) do
-      page = client.list_folder(cursor: "cur-1")
+      page = client.list(cursor: "cur-1")
 
       assert_nil page.next_cursor
       refute page.more?
@@ -55,12 +55,12 @@ class ClientTest < Minitest::Test
     assert_equal({ "cursor" => "cur-1" }, JSON.parse(captured.first[:body]))
   end
 
-  def test_list_folder_keeps_an_id_scoped_path
+  def test_list_keeps_an_id_scoped_path
     captured = []
     body = { "entries" => [], "cursor" => "cur-id", "has_more" => false }
 
     stub_http([{ path: "/2/files/list_folder", response: json_ok(body), capture: captured }]) do
-      page = client.list_folder(path: "id:abc")
+      page = client.list(path: "id:abc")
 
       refute page.more?
     end
@@ -113,7 +113,7 @@ class ClientTest < Minitest::Test
     assert_equal({ "cursor" => "search-1" }, JSON.parse(captured.first[:body]))
   end
 
-  def test_metadata_posts_get_metadata
+  def test_fetch_file_posts_get_metadata
     captured = []
     body = {
       ".tag" => "file",
@@ -124,7 +124,7 @@ class ClientTest < Minitest::Test
     }
 
     stub_http([{ path: "/2/files/get_metadata", response: json_ok(body), capture: captured }]) do
-      entry = client.metadata(path: "id:file-1")
+      entry = client.fetch_file(path: "id:file-1")
 
       assert_equal "Brief.pdf", entry.name
       assert_equal true, entry.file?
@@ -133,15 +133,15 @@ class ClientTest < Minitest::Test
     assert_equal({ "path" => "id:file-1" }, JSON.parse(captured.first[:body]))
   end
 
-  def test_metadata_keeps_ns_and_rev_paths
+  def test_fetch_file_keeps_ns_and_rev_paths
     captured = []
     body = { ".tag" => "file", "id" => "id:file-1", "name" => "Brief.pdf", "path_display" => "/Brief.pdf" }
 
     stub_http([{ path: "/2/files/get_metadata", response: json_ok(body), capture: captured }]) do
-      client.metadata(path: "ns:123")
+      client.fetch_file(path: "ns:123")
     end
     stub_http([{ path: "/2/files/get_metadata", response: json_ok(body), capture: captured }]) do
-      client.metadata(path: "rev:abc")
+      client.fetch_file(path: "rev:abc")
     end
 
     assert_equal({ "path" => "ns:123" }, JSON.parse(captured[0][:body]))
@@ -223,7 +223,7 @@ class ClientTest < Minitest::Test
     body = { ".tag" => "file", "id" => "id:up-1", "name" => "note.txt", "path_display" => "/note.txt" }
 
     stub_http([{ path: "/2/files/upload", response: json_ok(body), capture: captured }]) do
-      uploaded = client.upload_file(path: "/note.txt", content: "hi", content_type: "text/plain")
+      uploaded = client.upload_file(path: "/note.txt", io: "hi")
 
       assert_equal "id:up-1", uploaded.id
       assert_equal "note.txt", uploaded.name
@@ -239,7 +239,7 @@ class ClientTest < Minitest::Test
     body = { ".tag" => "file", "id" => "id:up-u", "name" => "naïve.pdf", "path_display" => UNICODE_PATH }
 
     stub_http([{ path: "/2/files/upload", response: json_ok(body), capture: captured }]) do
-      client.upload_file(path: UNICODE_PATH, content: "pdf", content_type: "application/pdf")
+      client.upload_file(path: UNICODE_PATH, io: "pdf")
     end
 
     assert_includes captured.first[:dropbox_arg], '\u00e9'
@@ -253,8 +253,7 @@ class ClientTest < Minitest::Test
     stub_http([{ path: "/2/files/upload", response: json_ok(body), capture: captured }]) do
       uploaded = client.upload_file(
         path: "/exact.bin",
-        content: content,
-        content_type: "application/octet-stream",
+        io: content,
         chunk_size: content.bytesize
       )
 
@@ -278,8 +277,7 @@ class ClientTest < Minitest::Test
     stub_http(requests) do
       uploaded = client.upload_file(
         path: "/over.bin",
-        content: "abcde",
-        content_type: "application/octet-stream",
+        io: "abcde",
         chunk_size: 4
       )
 
@@ -305,8 +303,7 @@ class ClientTest < Minitest::Test
     stub_http(requests) do
       uploaded = client.upload_file(
         path: "/big.bin",
-        content: "abcdefghij",
-        content_type: "application/octet-stream",
+        io: "abcdefghij",
         chunk_size: 4
       )
 
@@ -328,24 +325,17 @@ class ClientTest < Minitest::Test
     response = json_error(401, { "error" => { ".tag" => "expired_access_token" } })
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      error = assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list_folder }
+      error = assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list }
 
       assert_equal "Dropbox access token is no longer valid", error.message
     end
-  end
-
-  def test_transport_does_not_check_allowed_hosts
-    refute RecordingStudioDropbox::Transport.const_defined?(:ALLOWED_HOSTS)
-    source = File.read(File.expand_path("../lib/recording_studio_dropbox/transport.rb", __dir__))
-
-    refute_includes source, "ALLOWED_HOSTS"
   end
 
   def test_invalid_grant_raises_reconnect_required
     response = json_error(400, { "error" => "invalid_grant" })
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list_folder }
+      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list }
     end
   end
 
@@ -353,7 +343,7 @@ class ClientTest < Minitest::Test
     response = json_error(401, { "error" => { ".tag" => "invalid_access_token" } })
 
     stub_http([{ path: "/2/files/get_metadata", response: response }]) do
-      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.metadata(path: "/gone") }
+      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.fetch_file(path: "/gone") }
     end
   end
 
@@ -361,7 +351,7 @@ class ClientTest < Minitest::Test
     response = json_error(403, { "error" => { ".tag" => "missing_scope" } })
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list_folder }
+      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list }
     end
   end
 
@@ -369,7 +359,7 @@ class ClientTest < Minitest::Test
     response = json_error(401, {})
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list_folder }
+      assert_raises(RecordingStudioDropbox::ReconnectRequired) { client.list }
     end
   end
 
@@ -382,7 +372,7 @@ class ClientTest < Minitest::Test
     response = json_error(409, payload)
 
     stub_http([{ path: "/2/files/get_metadata", response: response }]) do
-      error = assert_raises(RecordingStudioDropbox::RequestError) { client.metadata(path: "/missing") }
+      error = assert_raises(RecordingStudioDropbox::RequestError) { client.fetch_file(path: "/missing") }
 
       assert_equal 409, error.status
       assert_equal "path", error.code
@@ -393,14 +383,14 @@ class ClientTest < Minitest::Test
 
   def test_empty_upload_raises_error
     error = assert_raises(RecordingStudioDropbox::Error) do
-      client.upload_file(path: "/empty.txt", content: "", content_type: "text/plain")
+      client.upload_file(path: "/empty.txt", io: "")
     end
 
     assert_equal "Dropbox upload content is empty", error.message
   end
 
-  def test_metadata_requires_a_path
-    error = assert_raises(RecordingStudioDropbox::Error) { client.metadata(path: "  ") }
+  def test_fetch_file_requires_a_path
+    error = assert_raises(RecordingStudioDropbox::Error) { client.fetch_file(path: "  ") }
 
     assert_equal "Dropbox path is blank", error.message
   end
@@ -411,7 +401,7 @@ class ClientTest < Minitest::Test
     io = StringIO.new("from-io")
 
     stub_http([{ path: "/2/files/upload", response: json_ok(body), capture: captured }]) do
-      uploaded = client.upload_file(path: "/io.txt", content: io, content_type: "text/plain")
+      uploaded = client.upload_file(path: "/io.txt", io: io)
 
       assert_equal "id:up-io", uploaded.id
     end
@@ -419,11 +409,19 @@ class ClientTest < Minitest::Test
     assert_equal "from-io", captured.first[:body]
   end
 
+  def test_upload_rejects_a_non_io
+    error = assert_raises(ArgumentError) do
+      client.upload_file(path: "/nope.txt", io: Object.new)
+    end
+
+    assert_equal "upload io must be a String or respond to read", error.message
+  end
+
   def test_non_json_failure_raises_request_error
     response = http_response(code: 504, body: "gateway timeout")
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list_folder }
+      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list }
 
       assert_equal 504, error.status
       assert_equal "Dropbox request failed", error.message
@@ -435,7 +433,7 @@ class ClientTest < Minitest::Test
     response = http_response(code: 200, body: "not-json")
 
     stub_http([{ path: "/2/files/list_folder", response: response }]) do
-      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list_folder }
+      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list }
 
       assert_equal "Dropbox returned invalid JSON", error.message
     end
@@ -452,8 +450,7 @@ class ClientTest < Minitest::Test
       error = assert_raises(RecordingStudioDropbox::RequestError) do
         client.upload_file(
           path: "/over.bin",
-          content: "abcde",
-          content_type: "application/octet-stream",
+          io: "abcde",
           chunk_size: 4
         )
       end
@@ -464,7 +461,7 @@ class ClientTest < Minitest::Test
 
   def test_connection_refused_raises_request_error
     Net::HTTP.stub(:start, ->(*) { raise Errno::ECONNREFUSED }) do
-      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list_folder }
+      error = assert_raises(RecordingStudioDropbox::RequestError) { client.list }
 
       assert_equal "Dropbox request failed", error.message
     end
@@ -485,7 +482,7 @@ class ClientTest < Minitest::Test
       raise "should not connect"
     }) do
       error_client = RecordingStudioDropbox::Client.new(token_provider: -> { "" })
-      assert_raises(RecordingStudioDropbox::ReconnectRequired) { error_client.list_folder }
+      assert_raises(RecordingStudioDropbox::ReconnectRequired) { error_client.list }
     end
 
     refute started
