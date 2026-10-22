@@ -56,6 +56,21 @@ class OauthTokenTest < ActiveSupport::TestCase
     refute_includes error.message, SECRET_TOKEN
   end
 
+  test "revoked connection raises ReconnectRequired" do
+    create_user_connection!(
+      access_token: SECRET_TOKEN,
+      refresh_token: "live-refresh",
+      status: "revoked"
+    )
+
+    error = assert_raises(RecordingStudioDropbox::ReconnectRequired) do
+      RecordingStudioDropbox::OauthToken.new(root: @root, actor: @user).call
+    end
+
+    assert_equal "Dropbox reconnect required", error.message
+    refute_includes error.message, SECRET_TOKEN
+  end
+
   test "refresh failure raises ReconnectRequired" do
     create_user_connection!(
       access_token: SECRET_TOKEN,
@@ -74,14 +89,14 @@ class OauthTokenTest < ActiveSupport::TestCase
 
   private
 
-  def create_user_connection!(access_token:, refresh_token:, expires_at: 1.hour.from_now)
+  def create_user_connection!(access_token:, refresh_token:, expires_at: 1.hour.from_now, status: "active")
     RecordingStudioOauth::OutboundConnection.create!(
       provider_key: RecordingStudioDropbox::OauthProvider::KEY.to_s,
       owner_actor: @user,
       connected_by: @user,
       access_token: access_token,
       refresh_token: refresh_token,
-      status: "active",
+      status: status,
       expires_at: expires_at,
       granted_scopes: RecordingStudioDropbox::Client::SCOPES
     )

@@ -224,11 +224,21 @@ class RecordingStudioDropboxTest < Minitest::Test
     initializer_source = File.read(initializer_path)
 
     assert_includes initializer_source, "config.require_recordable_declarations = true"
-    assert_includes initializer_source, "\"Workspace\""
-    assert_includes initializer_source, "\"Folder\""
-    assert_includes initializer_source, "\"Page\""
-    assert_includes initializer_source, "RecordingStudioSiteSettings::SiteSetting"
-    assert_includes initializer_source, "RecordingStudioAttachable::Attachment"
+    recordable_types = initializer_source[/config\.recordable_types = \[(.*?)\]/m, 1].scan(/"([^"]+)"/).flatten
+    assert_equal [
+      "Workspace",
+      "Folder",
+      "Page",
+      "RecordingStudioSiteSettings::SiteSetting",
+      "RecordingStudioAttachable::Attachment",
+      "RecordingStudioAttachable::Library",
+      "RecordingStudioAttachable::Placement",
+      "RecordingStudio::Access",
+      "RecordingStudioApi::AdminApi",
+      "RecordingStudioApi::ApiAccessToken",
+      "RecordingStudioApi::ApiClient",
+      "RecordingStudioApi::ApiCredential"
+    ], recordable_types
     refute_includes initializer_source, "config.include_children"
     refute_includes initializer_source, "config.features."
     refute_includes initializer_source, "v3"

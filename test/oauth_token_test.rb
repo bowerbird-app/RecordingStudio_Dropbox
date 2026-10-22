@@ -20,7 +20,7 @@ class OauthTokenTest < Minitest::Test
     assert_equal :person, seen[:actor]
   end
 
-  def test_expired_then_refreshed_uses_the_token_oauth_returns
+  def test_returns_access_token_from_the_looked_up_connection
     connection = token_connection("refreshed-dropbox-token")
 
     RecordingStudioOauth.stub(:connection_for, lookup_stub(connection)) do
@@ -31,17 +31,6 @@ class OauthTokenTest < Minitest::Test
   end
 
   def test_no_connection_raises_reconnect_required_without_a_token
-    RecordingStudioOauth.stub(:connection_for, lookup_stub(nil)) do
-      error = assert_raises(RecordingStudioDropbox::ReconnectRequired) do
-        RecordingStudioDropbox::OauthToken.new(root: :workspace, actor: :person).call
-      end
-
-      assert_equal "Dropbox reconnect required", error.message
-      refute_includes error.message, SECRET_TOKEN
-    end
-  end
-
-  def test_refresh_failure_raises_reconnect_required_without_a_token
     RecordingStudioOauth.stub(:connection_for, lookup_stub(nil)) do
       error = assert_raises(RecordingStudioDropbox::ReconnectRequired) do
         RecordingStudioDropbox::OauthToken.new(root: :workspace, actor: :person).call
@@ -67,9 +56,7 @@ class OauthTokenTest < Minitest::Test
   private
 
   def token_connection(token)
-    connection = Object.new
-    connection.define_singleton_method(:access_token) { token }
-    connection
+    Struct.new(:access_token).new(token)
   end
 
   def lookup_stub(connection, seen_box: nil)

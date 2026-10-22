@@ -74,7 +74,8 @@ class FakeDropboxOauth
     end
 
     def verifier_matches?(verifier, challenge)
-      RecordingStudioOauth::Pkce.s256_matches?(verifier, challenge)
+      digest = OpenSSL::Digest::SHA256.digest(verifier.to_s)
+      Base64.urlsafe_encode64(digest, padding: false) == challenge.to_s
     end
 
     def store_code(code, payload, challenge)

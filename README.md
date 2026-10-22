@@ -55,6 +55,8 @@ client = RecordingStudioDropbox::Client.new(token_provider: token)
 client.list(path: "")
 ```
 
+`AccessToken` and callable token providers still work (`Client.new(token_provider:)`).
+
 `OauthToken` calls `RecordingStudioOauth.connection_for(provider:, root:, actor:)`. Oauth refreshes an expired access token. If there is no connection, refresh fails, or the row is revoked, this gem raises `ReconnectRequired`. Tokens never go in the session, logs, or exception messages.
 
 Tests can still pass a callable and stub `Net::HTTP`. They should not hit Dropbox.
