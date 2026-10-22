@@ -26,7 +26,7 @@ class AccessTokenTest < Minitest::Test
 
   def test_nil_token_raises_reconnect_required
     assert_raises(RecordingStudioDropbox::ReconnectRequired) do
-      RecordingStudioDropbox::AccessToken.new(-> { nil }).to_s
+      RecordingStudioDropbox::AccessToken.new(-> {}).to_s
     end
   end
 

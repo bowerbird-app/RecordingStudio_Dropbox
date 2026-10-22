@@ -5,7 +5,7 @@ require "test_helper"
 class ContractTest < Minitest::Test
   def test_access_token_is_the_public_token_type
     refute defined?(RecordingStudioDropbox::TokenProvider)
-    assert_equal [[:req, :provider]], RecordingStudioDropbox::AccessToken.instance_method(:initialize).parameters
+    assert_equal [%i[req provider]], RecordingStudioDropbox::AccessToken.instance_method(:initialize).parameters
     assert RecordingStudioDropbox::AccessToken.method_defined?(:to_s)
   end
 
@@ -15,7 +15,7 @@ class ContractTest < Minitest::Test
     assert RecordingStudioDropbox::RequestError < RecordingStudioDropbox::Error
     refute defined?(RecordingStudioDropbox::ApiError)
     assert_equal(
-      [[:key, :status], [:key, :code]],
+      [%i[key status], %i[key code]],
       RecordingStudioDropbox::RequestError.instance_method(:initialize).parameters
     )
     assert RecordingStudioDropbox::RequestError.method_defined?(:status)
@@ -25,7 +25,7 @@ class ContractTest < Minitest::Test
   def test_page_shape
     refute defined?(RecordingStudioDropbox::Listing)
     assert_equal(
-      [[:keyreq, :entries], [:keyreq, :next_cursor]],
+      [%i[keyreq entries], %i[keyreq next_cursor]],
       RecordingStudioDropbox::Page.instance_method(:initialize).parameters
     )
     page = RecordingStudioDropbox::Page.new(entries: [], next_cursor: nil)
@@ -36,7 +36,7 @@ class ContractTest < Minitest::Test
 
   def test_downloaded_file_shape
     assert_equal(
-      [[:keyreq, :body], [:keyreq, :filename], [:key, :content_type]],
+      [%i[keyreq body], %i[keyreq filename], %i[key content_type]],
       RecordingStudioDropbox::DownloadedFile.instance_method(:initialize).parameters
     )
     file = RecordingStudioDropbox::DownloadedFile.new(body: "x", filename: "a.pdf", content_type: "application/pdf")
@@ -48,16 +48,16 @@ class ContractTest < Minitest::Test
 
   def test_client_signatures
     client = RecordingStudioDropbox::Client
-    assert_equal [[:keyreq, :token_provider]], client.instance_method(:initialize).parameters
-    assert_equal [[:key, :path], [:key, :cursor]], client.instance_method(:list_folder).parameters
+    assert_equal [%i[keyreq token_provider]], client.instance_method(:initialize).parameters
+    assert_equal [%i[key path], %i[key cursor]], client.instance_method(:list_folder).parameters
     assert_equal(
-      [[:keyreq, :query], [:key, :path], [:key, :cursor]],
+      [%i[keyreq query], %i[key path], %i[key cursor]],
       client.instance_method(:search).parameters
     )
-    assert_equal [[:keyreq, :path]], client.instance_method(:metadata).parameters
-    assert_equal [[:keyreq, :path]], client.instance_method(:download).parameters
+    assert_equal [%i[keyreq path]], client.instance_method(:metadata).parameters
+    assert_equal [%i[keyreq path]], client.instance_method(:download).parameters
     assert_equal(
-      [[:keyreq, :path], [:keyreq, :content], [:key, :chunk_size]],
+      [%i[keyreq path], %i[keyreq content], %i[key chunk_size]],
       client.instance_method(:upload).parameters
     )
   end
