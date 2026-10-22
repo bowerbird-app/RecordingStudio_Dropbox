@@ -54,6 +54,10 @@ class EngineTest < Minitest::Test
     names = RecordingStudioDropbox::Engine.initializers.map(&:name)
     refute_includes names, "recording_studio_dropbox.apply_model_extensions"
     refute_includes names, "recording_studio_dropbox.apply_controller_extensions"
+    refute_includes names, "recording_studio_dropbox.register_oauth_provider"
+    source = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
+    refute_includes source, "register_oauth_provider"
+    refute_includes source, "register_outbound_provider"
   end
 
   private

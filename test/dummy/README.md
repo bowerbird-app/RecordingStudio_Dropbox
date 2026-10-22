@@ -9,6 +9,7 @@ This Rails app exists to validate the Recording Studio Dropbox gem in a real hos
 - Root workspace plus seeded folder and page recordables
 - Recording Studio default layout, FlatPack assets, and Tailwind source scanning
 - Mounted `RecordingStudio::Engine` route behavior inside a host app
+- Dropbox connect, disconnect, and reconnect through Recording Studio Oauth, using a fake Dropbox provider (no real credentials)
 - Dummy-only `/docs/*` pages for gem-specific onboarding
 
 ## Quick Start
@@ -29,7 +30,8 @@ Then open the app and sign in with:
 
 ## Useful Routes
 
-- `/` - dummy app home page for the Dropbox client
+- `/` - dummy app home page for Dropbox connect, disconnect, and reconnect
+- `/recording_studio_oauth` - Oauth engine (outbound callback lives here)
 - `/recording_studio` - redirects to `/` while the mounted Recording Studio engine stays available under that prefix for non-root routes
 - `/users/sign_in` - Devise sign-in page
 - `/docs/install`, `/docs/config`, `/docs/recordable_types`, `/docs/recordings_tree`, `/docs/gem_views`, `/docs/methods` - dummy-only starter pages
@@ -41,4 +43,4 @@ Use this app to verify that the Dropbox client boots inside a Recording Studio h
 
 Authenticated pages use Recording Studio's shared default layout. Devise sign-in keeps `layouts/application`.
 
-The home page in `app/views/home/index.html.erb` should stay a minimal demo surface for the gem's core feature. Do not turn it into a wall of documentation; the dummy docs pages exist so deeper explanations can live in focused sections.
+The home page in `app/views/home/index.html.erb` should stay a minimal demo surface for Dropbox connect. Do not turn it into a wall of documentation; the dummy docs pages exist so deeper explanations can live in focused sections.

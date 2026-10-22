@@ -12,7 +12,7 @@
     code: <<~'CODE'
       RecordingStudioDropbox.configure do |config|
         config.hooks.on(:after_initialize) do |_engine|
-          # Host-only hook. The Dropbox client takes a token provider, not YAML keys.
+          # Host-only hook. Register the Dropbox Oauth provider from this gem.
         end
       end
     CODE

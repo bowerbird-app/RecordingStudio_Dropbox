@@ -43,5 +43,10 @@ module Dummy
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Dummy-only encryption so Oauth can store outbound tokens without Rails credentials.
+    config.active_record.encryption.primary_key = "dummyPrimaryKeyForTestsxxxxxxxx"
+    config.active_record.encryption.deterministic_key = "dummyDeterministicKeyForTestsxx"
+    config.active_record.encryption.key_derivation_salt = "dummyKeyDerivationSaltForTestsx"
   end
 end

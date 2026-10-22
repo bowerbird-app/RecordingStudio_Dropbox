@@ -15,9 +15,11 @@
   <%= render FlatPack::CodeBlock::Component.new(
     language: :ruby,
     code: <<~'CODE'
-      client = RecordingStudioDropbox::Client.new(
-        token_provider: -> { connection.access_token }
+      token = RecordingStudioDropbox::OauthToken.new(
+        root: root_recording,
+        actor: current_user
       )
+      client = RecordingStudioDropbox::Client.new(token_provider: token)
 
       page = client.list(path: "")
       file = client.download(path: page.entries.first.id)

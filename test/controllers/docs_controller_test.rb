@@ -106,6 +106,7 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Methods"
     assert_includes response.body, "Public methods on RecordingStudioDropbox::Client."
     assert_includes response.body, "RecordingStudioDropbox::Client.new"
+    assert_includes response.body, "RecordingStudioDropbox::OauthToken"
     assert_includes response.body, "token_provider"
     assert_includes response.body, "page = client.list(path:"
   end
