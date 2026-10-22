@@ -117,6 +117,8 @@ class RecordingStudioDropboxTest < Minitest::Test
 
   def test_dummy_schema_includes_accessible_depends_on_recording_id
     schema = File.read(File.expand_path("dummy/db/schema.rb", __dir__))
+    assert_includes schema, 'create_table "recording_studio_oauth_outbound_connections"'
+    assert_includes schema, 'create_table "recording_studio_oauth_outbound_handshakes"'
     migration = File.read(
       File.expand_path(
         "dummy/db/migrate/20260911024811_add_depends_on_recording_id_to_recording_studio_accesses.rb",
@@ -222,7 +224,11 @@ class RecordingStudioDropboxTest < Minitest::Test
     initializer_source = File.read(initializer_path)
 
     assert_includes initializer_source, "config.require_recordable_declarations = true"
-    assert_includes initializer_source, "config.recordable_types = [ \"Workspace\", \"Folder\", \"Page\" ]"
+    assert_includes initializer_source, "\"Workspace\""
+    assert_includes initializer_source, "\"Folder\""
+    assert_includes initializer_source, "\"Page\""
+    assert_includes initializer_source, "RecordingStudioSiteSettings::SiteSetting"
+    assert_includes initializer_source, "RecordingStudioAttachable::Attachment"
     refute_includes initializer_source, "config.include_children"
     refute_includes initializer_source, "config.features."
     refute_includes initializer_source, "v3"

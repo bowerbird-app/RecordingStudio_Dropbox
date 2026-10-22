@@ -21,6 +21,8 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
 
     assert connection.column_exists?(:recording_studio_recordings, :root_recording_id)
     assert connection.table_exists?(:recording_studio_accesses)
+    assert connection.table_exists?(:recording_studio_oauth_outbound_connections)
+    assert connection.table_exists?(:recording_studio_oauth_outbound_handshakes)
     assert connection.table_exists?(:recording_studio_access_constraints)
     assert connection.table_exists?(:recording_studio_access_rules)
     refute connection.table_exists?(:recording_studio_access_boundaries)

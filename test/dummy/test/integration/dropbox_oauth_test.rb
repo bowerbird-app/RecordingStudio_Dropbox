@@ -23,7 +23,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
   end
 
   test "home shows connect when there is no Dropbox connection" do
-    get root_path
+    get "/"
 
     assert_response :success
     assert_includes response.body, "Connect Dropbox"
@@ -46,7 +46,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     refute_includes logs, connection.access_token
     refute session.to_hash.values.flatten.compact.any? { |value| value.to_s.include?(connection.access_token) }
 
-    get root_path
+    visit_home!
     assert_response :success
     assert_includes response.body, "Disconnect"
     assert_includes response.body, "Dropbox is connected. Disconnect any time."
@@ -62,7 +62,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/"
     assert_equal "revoked", connection.reload.status
 
-    get root_path
+    visit_home!
     assert_response :success
     assert_includes response.body, "Connect Dropbox"
   end
@@ -72,7 +72,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     connection = RecordingStudioOauth::OutboundConnection.find_by!(owner_actor: @user)
     connection.update_columns(status: "needs_reconnect", updated_at: Time.current)
 
-    get root_path
+    visit_home!
     assert_response :success
     assert_includes response.body, "Reconnect Dropbox"
     assert_includes response.body, "Disconnect"
@@ -87,13 +87,17 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     follow_connect!
     assert_equal "active", connection.reload.status
 
-    get root_path
+    visit_home!
     assert_response :success
     assert_includes response.body, "Disconnect"
     refute_includes response.body, "Reconnect Dropbox"
   end
 
   private
+
+  def visit_home!
+    get "/"
+  end
 
   def follow_connect!
     post recording_studio_oauth.outbound_connect_path(provider: "dropbox"), params: {
