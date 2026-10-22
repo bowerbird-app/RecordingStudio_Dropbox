@@ -29,7 +29,7 @@ Then open the app and sign in with:
 
 ## Useful Routes
 
-- `/` - dummy app home page and template guidance
+- `/` - dummy app home page for the Dropbox client
 - `/recording_studio` - redirects to `/` while the mounted Recording Studio engine stays available under that prefix for non-root routes
 - `/users/sign_in` - Devise sign-in page
 - `/docs/install`, `/docs/config`, `/docs/recordable_types`, `/docs/recordings_tree`, `/docs/gem_views`, `/docs/methods` - dummy-only starter pages
@@ -37,8 +37,8 @@ Then open the app and sign in with:
 
 ## Why This App Exists
 
-Use this app to verify the generated addon experience before renaming the gem or copying patterns into another host app. If a layout, route, asset source, or Recording Studio initializer change breaks here, the template likely needs adjustment before reuse.
+Use this app to verify that the Dropbox client boots inside a Recording Studio host. If a layout, route, asset source, or Recording Studio initializer change breaks here, fix it before a host app copies the pattern.
 
-Authenticated pages use Recording Studio's shared default layout. Devise sign-in keeps `layouts/application`. Replace dummy docs page content so it matches the gem's actual concepts.
+Authenticated pages use Recording Studio's shared default layout. Devise sign-in keeps `layouts/application`.
 
 The home page in `app/views/home/index.html.erb` should stay a minimal demo surface for the gem's core feature. Do not turn it into a wall of documentation; the dummy docs pages exist so deeper explanations can live in focused sections.

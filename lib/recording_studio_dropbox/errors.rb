@@ -5,13 +5,13 @@ module RecordingStudioDropbox
 
   class ReconnectRequired < Error; end
 
-  class ApiError < Error
-    attr_reader :status, :tag
+  class RequestError < Error
+    attr_reader :status, :code
 
-    def initialize(message = nil, status:, tag: nil)
+    def initialize(status: nil, code: nil)
       @status = status
-      @tag = tag
-      super(message)
+      @code = code
+      super()
     end
   end
 end

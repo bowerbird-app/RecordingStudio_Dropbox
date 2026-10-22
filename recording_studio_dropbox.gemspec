@@ -9,11 +9,11 @@ Gem::Specification.new do |spec|
   spec.homepage    = "https://github.com/bowerbird-app/RecordingStudio_Dropbox"
   spec.summary     = "Dropbox API client for Recording Studio"
   spec.description = "Lists, downloads, and uploads Dropbox files for Recording Studio. " \
-                     "The client takes an access token through a token provider. " \
+                     "The client takes an access token through RecordingStudioDropbox::AccessToken. " \
                      "Encrypted Dropbox tokens will come from RecordingStudioOauth.connection_for " \
                      "once that gem ships."
   spec.license     = "MIT"
-  spec.required_ruby_version = ">= 3.3.0"
+  spec.required_ruby_version = ">= 3.3.12"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/bowerbird-app/RecordingStudio_Dropbox"

@@ -28,8 +28,9 @@ class ConfigurationTest < Minitest::Test
   end
 
   def test_configure_without_block_is_safe
-    RecordingStudioDropbox.configure
+    result = RecordingStudioDropbox.configure
 
-    assert_kind_of RecordingStudioDropbox::Configuration, RecordingStudioDropbox.configuration
+    assert_same RecordingStudioDropbox.configuration, result
+    assert_kind_of RecordingStudioDropbox::Configuration, result
   end
 end

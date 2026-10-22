@@ -9,8 +9,7 @@ module RecordingStudioDropbox
     API_HOST = "api.dropboxapi.com"
     CONTENT_HOST = "content.dropboxapi.com"
     ALLOWED_HOSTS = [API_HOST, CONTENT_HOST].freeze
-    RECONNECT_TAGS = %w[expired_access_token invalid_access_token missing_scope].freeze
-    RECONNECT_ERROR_CODES = %w[invalid_token expired_token].freeze
+    RECONNECT_CODES = %w[invalid_grant expired_access_token invalid_access_token missing_scope].freeze
     TLS_START_OPTIONS = {
       use_ssl: true,
       open_timeout: 10,
@@ -19,8 +18,17 @@ module RecordingStudioDropbox
       write_timeout: 30
     }.freeze
 
+    def self.parse_json(raw)
+      text = raw.to_s
+      return {} if text.strip.empty?
+
+      JSON.parse(text)
+    rescue JSON::ParserError
+      {}
+    end
+
     def initialize(token_provider:)
-      @token_provider = TokenProvider.wrap(token_provider)
+      @access_token = AccessToken.new(token_provider)
     end
 
     def post_json(path, payload)
@@ -36,7 +44,7 @@ module RecordingStudioDropbox
       uri = URI("https://#{CONTENT_HOST}#{path}")
       request = Net::HTTP::Post.new(uri)
       request["Authorization"] = bearer
-      request["Dropbox-API-Arg"] = JSON.generate(arg)
+      request["Dropbox-API-Arg"] = encode_api_arg(arg)
       request["Content-Type"] = "application/octet-stream"
       request.body = body unless body.nil?
       response = perform(uri, request)
@@ -48,7 +56,11 @@ module RecordingStudioDropbox
     private
 
     def bearer
-      "Bearer #{@token_provider.access_token}"
+      "Bearer #{@access_token}"
+    end
+
+    def encode_api_arg(arg)
+      JSON.generate(arg, ascii_only: true).gsub("\u007F", '\u007f')
     end
 
     def perform(uri, request)
@@ -60,51 +72,35 @@ module RecordingStudioDropbox
     end
 
     def parse_json_response(response)
-      body = parse_json(response.body)
+      body = self.class.parse_json(response.body)
       raise_for_failure!(response, body) unless success?(response)
 
       body
     end
 
     def raise_for_failure!(response, body = nil)
-      parsed = body || parse_json(response.body)
-      tag = error_tag(parsed)
+      parsed = body || self.class.parse_json(response.body)
+      code = error_code(parsed)
       status = response.code.to_i
-      raise ReconnectRequired if reconnect?(status, tag, parsed)
+      raise ReconnectRequired if reconnect?(status, code)
 
-      raise ApiError.new(api_error_message(status, tag, parsed), status: status, tag: tag)
+      raise RequestError.new(status: status, code: code)
     end
 
-    def reconnect?(status, tag, parsed)
-      return true if status == 401
-      return true if RECONNECT_TAGS.include?(tag)
-
-      error = parsed["error"]
-      error.is_a?(String) && RECONNECT_ERROR_CODES.include?(error)
+    def reconnect?(status, code)
+      status == 401 || RECONNECT_CODES.include?(code)
     end
 
-    def error_tag(parsed)
+    def error_code(parsed)
       error = parsed["error"]
       return error[".tag"] if error.is_a?(Hash)
+      return error if error.is_a?(String)
 
       nil
     end
 
-    def api_error_message(status, tag, parsed)
-      tag || parsed["error_summary"] || "Dropbox request failed (HTTP #{status})"
-    end
-
     def success?(response)
       response.is_a?(Net::HTTPSuccess)
-    end
-
-    def parse_json(raw)
-      text = raw.to_s
-      return {} if text.strip.empty?
-
-      JSON.parse(text)
-    rescue JSON::ParserError
-      {}
     end
   end
 end

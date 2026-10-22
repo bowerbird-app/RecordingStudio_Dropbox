@@ -206,7 +206,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     readme = File.read(File.expand_path("../README.md", __dir__))
 
     assert_includes readme, "RecordingStudioDropbox::Client"
-    assert_includes readme, "token provider"
+    assert_includes readme, "AccessToken"
     assert_includes readme, "connection_for"
     assert_includes readme, "ReconnectRequired"
     refute_includes readme, "Template Demo"

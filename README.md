@@ -6,7 +6,7 @@ It does not register an Attachable upload source in this release. That work is a
 
 ## What you get
 
-`RecordingStudioDropbox::Client` is the public entry. Pass an access token through a token provider. The client does not load RecordingStudioOauth yet.
+`RecordingStudioDropbox::Client` is the public entry. Pass an access token through `RecordingStudioDropbox::AccessToken`. The client does not load RecordingStudioOauth yet.
 
 | Method | Dropbox endpoints |
 | --- | --- |
@@ -16,15 +16,15 @@ It does not register an Attachable upload source in this release. That work is a
 | `download` | `/2/files/download` |
 | `upload` | `/2/files/upload`, or a session (`start`, `append_v2`, `finish`) when the body is larger than 8 MiB |
 
+`list_folder` and `search` return a `Page` with `entries`, `next_cursor` (nil when there are no more pages), and `more?`. Pass `cursor:` to fetch the next page. Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`.
+
 HTTP uses `Net::HTTP`, the same client Recording Studio Attachable uses for Dropbox today. There is no Dropbox SDK.
 
 Scopes this client needs are `files.metadata.read`, `files.content.read`, and `files.content.write`.
 
-## Token provider
+## Access token
 
-The client asks the provider for a fresh access token on each request.
-
-A callable works:
+`RecordingStudioDropbox::AccessToken.new(provider)` reads the token with `#to_s`. If the provider responds to `call`, that is used first. Otherwise it uses `#access_token`. A raw String is a misconfiguration and raises `ArgumentError`. A blank or nil token at request time raises `ReconnectRequired`.
 
 ```ruby
 client = RecordingStudioDropbox::Client.new(
@@ -39,21 +39,21 @@ client = RecordingStudioDropbox::Client.new(token_provider: connection)
 client.list_folder(path: "")
 ```
 
-Tests pass a fake provider and stub `Net::HTTP`.
+Tests pass a callable provider and stub `Net::HTTP`.
 
-A missing or blank token raises `RecordingStudioDropbox::ReconnectRequired`.
+`RecordingStudioDropbox.configure` yields the configuration and returns it.
 
 ## Errors
 
-Token problems raise `RecordingStudioDropbox::ReconnectRequired`. Callers can turn that into a reconnect state. Classification uses the HTTP status and Dropbox's structured `error[".tag"]` field.
+Token problems raise `RecordingStudioDropbox::ReconnectRequired`. Callers can turn that into a reconnect state. Classification uses the HTTP status and Dropbox's structured error tag, exposed as `RequestError#code`.
 
 | Signal | Error |
 | --- | --- |
 | HTTP 401 | `ReconnectRequired` |
-| `expired_access_token`, `invalid_access_token`, `missing_scope` | `ReconnectRequired` |
-| Other failed Dropbox responses | `RecordingStudioDropbox::ApiError` |
+| `invalid_grant`, `expired_access_token` | `ReconnectRequired` |
+| Other failed Dropbox responses | `RecordingStudioDropbox::RequestError` (`status` and `code`, both may be nil) |
 
-Do not rescue `StandardError` around these calls.
+Do not rescue `StandardError` around these calls. Exception messages do not include the Dropbox response body.
 
 ## Planned Oauth wiring
 

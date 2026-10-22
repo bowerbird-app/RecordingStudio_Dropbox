@@ -5,9 +5,9 @@ require "recording_studio_dropbox/version"
 require "recording_studio_dropbox/engine"
 require "recording_studio_dropbox/configuration"
 require "recording_studio_dropbox/errors"
-require "recording_studio_dropbox/token_provider"
+require "recording_studio_dropbox/access_token"
 require "recording_studio_dropbox/entry"
-require "recording_studio_dropbox/listing"
+require "recording_studio_dropbox/page"
 require "recording_studio_dropbox/downloaded_file"
 require "recording_studio_dropbox/uploaded_file"
 require "recording_studio_dropbox/transport"
@@ -22,6 +22,7 @@ module RecordingStudioDropbox
 
     def configure
       yield(configuration) if block_given?
+      configuration
     end
   end
 end

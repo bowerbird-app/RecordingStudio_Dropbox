@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "json"
 require "stringio"
 
 module RecordingStudioDropbox
   class Client
     SIMPLE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024
     SCOPES = %w[files.metadata.read files.content.read files.content.write].freeze
+    PREFIX_PATHS = %w[id: ns: rev:].freeze
 
     def initialize(token_provider:)
       @transport = Transport.new(token_provider: token_provider)
@@ -14,17 +14,17 @@ module RecordingStudioDropbox
 
     def list_folder(path: "", cursor: nil)
       if cursor
-        listing_from_folder(@transport.post_json("/2/files/list_folder/continue", { cursor: cursor }))
+        page_from_folder(@transport.post_json("/2/files/list_folder/continue", { cursor: cursor }))
       else
-        listing_from_folder(@transport.post_json("/2/files/list_folder", { path: normalize_folder_path(path) }))
+        page_from_folder(@transport.post_json("/2/files/list_folder", { path: normalize_folder_path(path) }))
       end
     end
 
     def search(query:, path: "", cursor: nil)
       if cursor
-        listing_from_search(@transport.post_json("/2/files/search/continue_v2", { cursor: cursor }))
+        page_from_search(@transport.post_json("/2/files/search/continue_v2", { cursor: cursor }))
       else
-        listing_from_search(
+        page_from_search(
           @transport.post_json(
             "/2/files/search_v2",
             { query: query, options: { path: normalize_folder_path(path) } }
@@ -40,7 +40,12 @@ module RecordingStudioDropbox
     def download(path:)
       normalized = normalize_entry_path(path)
       response = @transport.post_content("/2/files/download", arg: { path: normalized })
-      DownloadedFile.new(bytes: response.body.to_s, entry: entry_from_download(response, normalized))
+      result = Transport.parse_json(response["Dropbox-API-Result"])
+      DownloadedFile.new(
+        body: response.body.to_s,
+        filename: filename_from(result, normalized),
+        content_type: response["Content-Type"]
+      )
     end
 
     def upload(path:, content:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
@@ -53,30 +58,29 @@ module RecordingStudioDropbox
 
     private
 
-    def listing_from_folder(body)
-      Listing.new(
+    def page_from_folder(body)
+      Page.new(
         entries: Array(body["entries"]).map { |entry| Entry.from_api(entry) },
-        cursor: body["cursor"],
-        has_more: body["has_more"] == true,
-        kind: :folder
+        next_cursor: cursor_when_more(body)
       )
     end
 
-    def listing_from_search(body)
-      entries = Array(body["matches"]).map { |match| Entry.from_api(match) }
-      Listing.new(
-        entries: entries,
-        cursor: body["cursor"],
-        has_more: body["has_more"] == true,
-        kind: :search
+    def page_from_search(body)
+      Page.new(
+        entries: Array(body["matches"]).map { |match| Entry.from_api(match) },
+        next_cursor: cursor_when_more(body)
       )
     end
 
-    def entry_from_download(response, path)
-      result = response["Dropbox-API-Result"]
-      return Entry.from_api(parse_json(result)) if result
+    def cursor_when_more(body)
+      body["has_more"] == true ? body["cursor"] : nil
+    end
 
-      Entry.from_api("id" => nil, "name" => File.basename(path), "path_display" => path, ".tag" => "file")
+    def filename_from(result, path)
+      name = result["name"].to_s
+      return name unless name.empty?
+
+      File.basename(path)
     end
 
     def content_io(content)
@@ -89,26 +93,21 @@ module RecordingStudioDropbox
     def normalize_folder_path(path)
       raw = path.to_s
       return "" if raw.empty? || raw == "/"
-
-      raw.start_with?("/") ? raw : "/#{raw}"
-    end
-
-    def normalize_entry_path(path)
-      raw = path.to_s.strip
-      raise Error, "Dropbox path is required" if raw.empty?
-
-      return raw if raw.start_with?("id:") || raw.start_with?("/")
+      return raw if prefixed_path?(raw) || raw.start_with?("/")
 
       "/#{raw}"
     end
 
-    def parse_json(raw)
-      text = raw.to_s
-      return {} if text.strip.empty?
+    def normalize_entry_path(path)
+      raw = path.to_s.strip
+      raise Error if raw.empty?
+      return raw if prefixed_path?(raw) || raw.start_with?("/")
 
-      JSON.parse(text)
-    rescue JSON::ParserError
-      {}
+      "/#{raw}"
+    end
+
+    def prefixed_path?(raw)
+      PREFIX_PATHS.any? { |prefix| raw.start_with?(prefix) }
     end
   end
 end

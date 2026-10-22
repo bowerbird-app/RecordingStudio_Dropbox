@@ -2,19 +2,12 @@
 
 module RecordingStudioDropbox
   class DownloadedFile
-    attr_reader :bytes, :entry
+    attr_reader :body, :filename, :content_type
 
-    def initialize(bytes:, entry:)
-      @bytes = bytes
-      @entry = entry
-    end
-
-    def name
-      entry.name
-    end
-
-    def id
-      entry.id
+    def initialize(body:, filename:, content_type: nil)
+      @body = body
+      @filename = filename
+      @content_type = content_type
     end
   end
 end

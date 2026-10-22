@@ -45,7 +45,7 @@ class DummyCredentialsTest < Minitest::Test
     )
 
     assert_operator parsed.fetch("secret_key_base").to_s.length, :>=, 64
-    assert_equal PLACEHOLDER, parsed.dig("gem_template", "api_key")
+    refute parsed.key?("gem_template")
     assert_equal PLACEHOLDER, parsed.dig("smtp", "user_name")
     assert_equal PLACEHOLDER, parsed.dig("smtp", "password")
     assert_equal PLACEHOLDER, parsed.dig("aws", "access_key_id")

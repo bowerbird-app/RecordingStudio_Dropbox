@@ -83,7 +83,7 @@ bundle exec rake test
   2. Navigate to the relevant page (e.g., `/recording_studio_dropbox`).
   3. Interact with the UI elements (click buttons, fill forms, toggle switches).
   4. Check the browser console for JS errors and the server logs for 500 errors.
-- **Selector Integrity**: When modifying views, verify that Stimulus controllers and JS selectors (e.g., `data-gem-template-target`) still match the HTML.
+- **Selector Integrity**: When modifying views, verify that Stimulus controllers and JS selectors still match the HTML.
 
 ## 5. Validation Expectations
 

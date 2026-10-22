@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
-
 module RecordingStudioDropbox
   class Upload
     def initialize(transport:)
@@ -10,7 +8,7 @@ module RecordingStudioDropbox
 
     def call(path:, io:, chunk_size:)
       first = io.read(chunk_size).to_s
-      raise Error, "Upload content is empty" if first.empty?
+      raise Error if first.empty?
 
       rest = io.read(chunk_size)
       if rest.nil? || rest.empty?
@@ -28,7 +26,7 @@ module RecordingStudioDropbox
         arg: { path: path, mode: "add" },
         body: bytes
       )
-      UploadedFile.new(entry: Entry.from_api(parse_json(response.body)))
+      UploadedFile.new(entry: Entry.from_api(Transport.parse_json(response.body)))
     end
 
     def session_upload(path, first, second, io, chunk_size)
@@ -54,7 +52,7 @@ module RecordingStudioDropbox
 
     def start_session(first)
       start = @transport.post_content("/2/files/upload_session/start", arg: {}, body: first)
-      parse_json(start.body).fetch("session_id")
+      Transport.parse_json(start.body).fetch("session_id")
     end
 
     def append(session_id, offset, chunk)
@@ -74,16 +72,7 @@ module RecordingStudioDropbox
         },
         body: chunk
       )
-      UploadedFile.new(entry: Entry.from_api(parse_json(response.body)))
-    end
-
-    def parse_json(raw)
-      text = raw.to_s
-      return {} if text.strip.empty?
-
-      JSON.parse(text)
-    rescue JSON::ParserError
-      {}
+      UploadedFile.new(entry: Entry.from_api(Transport.parse_json(response.body)))
     end
   end
 end

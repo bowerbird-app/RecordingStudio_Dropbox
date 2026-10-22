@@ -26,5 +26,5 @@ user-invocable: false
 
 - Cover configuration defaults and overrides.
 - Cover hook ordering, arguments, and error isolation.
-- Add regression coverage for rename and generator flows.
+- Add regression coverage for generator and client flows.
 - Keep tests fast, deterministic, and scoped to the change.

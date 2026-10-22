@@ -62,41 +62,12 @@ class EngineTest < Minitest::Test
     assert_instance_of RecordingStudio::Hooks, RecordingStudioDropbox.configuration.hooks
   end
 
-  def test_apply_model_extensions_adds_registered_methods_once
-    model_class = Class.new do
-      def self.name
-        "ExampleRecord"
-      end
-    end
-
-    RecordingStudioDropbox.configuration.hooks.extend_model(:ExampleRecord) do
-      def dropbox_extension_method
-        :applied
-      end
-    end
-
-    RecordingStudioDropbox::Engine.apply_model_extensions(model_class)
-    RecordingStudioDropbox::Engine.apply_model_extensions(model_class)
-
-    assert_equal :applied, model_class.new.dropbox_extension_method
-  end
-
-  def test_apply_controller_extensions_matches_demodulized_name
-    controller_class = Class.new do
-      def self.name
-        "Admin::DashboardController"
-      end
-    end
-
-    RecordingStudioDropbox.configuration.hooks.extend_controller(:DashboardController) do
-      def dropbox_controller_extension
-        :applied
-      end
-    end
-
-    RecordingStudioDropbox::Engine.apply_controller_extensions(controller_class)
-
-    assert_equal :applied, controller_class.new.dropbox_controller_extension
+  def test_engine_does_not_apply_host_extensions
+    refute RecordingStudioDropbox::Engine.respond_to?(:apply_model_extensions)
+    refute RecordingStudioDropbox::Engine.respond_to?(:apply_controller_extensions)
+    names = RecordingStudioDropbox::Engine.initializers.map(&:name)
+    refute_includes names, "recording_studio_dropbox.apply_model_extensions"
+    refute_includes names, "recording_studio_dropbox.apply_controller_extensions"
   end
 
   private

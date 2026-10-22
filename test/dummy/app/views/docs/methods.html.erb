@@ -19,8 +19,8 @@
         token_provider: -> { connection.access_token }
       )
 
-      listing = client.list_folder(path: "")
-      file = client.download(path: listing.entries.first.id)
+      page = client.list_folder(path: "")
+      file = client.download(path: page.entries.first.id)
     CODE
   ) %>
 
