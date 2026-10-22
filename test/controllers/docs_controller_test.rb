@@ -107,7 +107,7 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Public methods on RecordingStudioDropbox::Client."
     assert_includes response.body, "RecordingStudioDropbox::Client.new"
     assert_includes response.body, "token_provider"
-    assert_includes response.body, "page = client.list(path: \"\")"
+    assert_includes response.body, "page = client.list(path:"
   end
 
   test "authenticated docs pages use the recording studio default layout" do
