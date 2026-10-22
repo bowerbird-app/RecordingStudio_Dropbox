@@ -1,4 +1,14 @@
 module ApplicationHelper
+  def dropbox_home_subtitle
+    if @dropbox_connection.nil?
+      "Connect Dropbox to copy files into this workspace."
+    elsif @dropbox_connection.needs_reconnect?
+      "Dropbox needs another look-in before we can copy files."
+    else
+      "Dropbox is connected. Disconnect any time."
+    end
+  end
+
   def dummy_page_nav(title:, back_url: nil, back_label: "Home")
     recording_studio_page_nav(
       title: title,

@@ -46,8 +46,9 @@ class InstallGeneratorTest < Minitest::Test
   def test_install_guide_points_hosts_at_access_token
     install_guide = File.read(INSTALL_TEMPLATE_PATH)
 
-    assert_includes install_guide, "RecordingStudioDropbox::AccessToken"
-    assert_includes install_guide, "RecordingStudioOauth"
+    assert_includes install_guide, "RecordingStudioDropbox::OauthToken"
+    assert_includes install_guide, "credentials.recording_studio_oauth.outbound.dropbox.client_id"
+    assert_includes install_guide, "credentials.recording_studio_oauth.outbound.dropbox.client_secret"
     refute_includes install_guide, "token provider"
     refute_includes install_guide, "RecordingStudio v3"
     refute_includes install_guide, "api_key"

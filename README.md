@@ -2,11 +2,11 @@
 
 This gem talks to the Dropbox HTTP API for Recording Studio. It lists folders, fetches metadata, downloads files, and uploads files. Files are copied into storage later. This gem does not link Dropbox files in place.
 
-It does not register an Attachable upload source in this release. That work is a later phase.
+Dropbox uses user OAuth. Tokens live on RecordingStudioOauth outbound connections. This gem does not register an Attachable upload source in this release. That work is a later phase.
 
 ## What you get
 
-`RecordingStudioDropbox::Client` is the public entry. Pass an access token through `RecordingStudioDropbox::AccessToken`. The client does not load RecordingStudioOauth yet.
+`RecordingStudioDropbox::Client` is the public entry. Resolve a token with `RecordingStudioDropbox::OauthToken`, then pass it as `token_provider:`. Tests can still pass a callable.
 
 | Method | Dropbox endpoints |
 | --- | --- |
@@ -28,24 +28,40 @@ Scopes this client needs are `files.metadata.read`, `files.content.read`, and `f
 
 This client uses the same method names as RecordingStudio Google Drive: `list`, `search`, `fetch_file`, `download`, and `upload_file`. Locators stay provider-native. Dropbox takes `path:` (a Dropbox path, or an `id:`, `ns:`, or `rev:` prefix). Google Drive takes Drive ids (`parent_id`, `file_id`). `search` is the same on both gems: query plus cursor paging, not a folder locator. `upload_file` takes `io:` on both. Google Drive also requires `content_type:`; Dropbox omits it because the Dropbox upload API does not use it.
 
-## Access token
+## Oauth tokens
 
-`RecordingStudioDropbox::AccessToken.new(provider)` reads the token with `#to_s`. If the provider responds to `call`, that is used first. Otherwise it uses `#access_token`. A raw String is a misconfiguration and raises `ArgumentError`. A blank or nil token at request time raises `ReconnectRequired`.
+Register the Dropbox provider from this gem, not from Oauth:
 
 ```ruby
-client = RecordingStudioDropbox::Client.new(
-  token_provider: -> { "sl.access-token" }
-)
+RecordingStudioDropbox.register_oauth_provider
 ```
 
-An object that implements `access_token` also works:
+That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`.
+
+Set these credential keys (never commit the values):
+
+- `recording_studio_oauth.outbound.dropbox.client_id`
+- `recording_studio_oauth.outbound.dropbox.client_secret`
+
+Resolve a token, then build the client:
 
 ```ruby
-client = RecordingStudioDropbox::Client.new(token_provider: connection)
+token = RecordingStudioDropbox::OauthToken.new(
+  root: root_recording,
+  actor: current_user
+)
+
+client = RecordingStudioDropbox::Client.new(token_provider: token)
 client.list(path: "")
 ```
 
-Tests pass a callable provider and stub `Net::HTTP`.
+`AccessToken` and callable token providers still work (`Client.new(token_provider:)`).
+
+`OauthToken` calls `RecordingStudioOauth.connection_for(provider:, root:, actor:)`. Oauth refreshes an expired access token. If there is no connection, refresh fails, or the row is revoked, this gem raises `ReconnectRequired`. Tokens never go in the session, logs, or exception messages.
+
+Tests can still pass a callable and stub `Net::HTTP`. They should not hit Dropbox.
+
+`RecordingStudioDropbox::AccessToken.new(provider)` still reads `#call` first, then `#access_token`. A raw String is a misconfiguration and raises `ArgumentError`. A blank or nil token at request time raises `ReconnectRequired`.
 
 `RecordingStudioDropbox.configure` yields the configuration and returns it.
 
@@ -61,27 +77,6 @@ Token problems raise `RecordingStudioDropbox::ReconnectRequired`. Callers can tu
 
 Do not rescue `StandardError` around these calls. Exception messages do not include the Dropbox response body.
 
-## Planned Oauth wiring
-
-[RecordingStudioOauth](https://github.com/bowerbird-app/RecordingStudio_Oauth) will store encrypted Dropbox tokens and expose `connection_for(provider:, root:, actor:)`. That work is still in [pull request 62](https://github.com/bowerbird-app/RecordingStudio_Oauth/pull/62) and is not a dependency of this gem.
-
-When it ships, wire the client like this:
-
-```ruby
-connection = RecordingStudioOauth.connection_for(
-  provider: :dropbox,
-  root: root_recording,
-  actor: current_user
-)
-raise RecordingStudioDropbox::ReconnectRequired if connection.nil?
-
-client = RecordingStudioDropbox::Client.new(
-  token_provider: -> { connection.access_token }
-)
-```
-
-Oauth lookup returns `nil` when a refresh fails and the row needs reconnect. Map that `nil` to `ReconnectRequired` in the caller.
-
 ## Planned Attachable wiring
 
 A later phase will register this gem with RecordingStudioAttachable through `register_upload_provider`. Do not add that registration here.
@@ -93,16 +88,29 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.1.0"
+    tag: "v0.2.0"
+
+gem "recording_studio_oauth",
+    github: "bowerbird-app/RecordingStudio_Oauth",
+    tag: "v0.14.1"
 ```
 
 ```bash
 bundle install
+bin/rails generate recording_studio_oauth:install
+bin/rails generate recording_studio_oauth:migrations
 bin/rails generate recording_studio_dropbox:install
+bin/rails db:migrate
 ```
 
-The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`.
+Mount Oauth so people can connect, disconnect, and reconnect:
+
+```ruby
+mount RecordingStudioOauth::Engine, at: "/recording_studio_oauth"
+```
+
+The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`. Dummy uses a fake Dropbox provider so it runs without real Dropbox credentials.
 
 ## Version
 
-0.1.0
+0.2.0

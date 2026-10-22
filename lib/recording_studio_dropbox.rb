@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require "recording_studio"
+require "recording_studio_oauth"
 require "recording_studio_dropbox/version"
 require "recording_studio_dropbox/engine"
 require "recording_studio_dropbox/configuration"
 require "recording_studio_dropbox/errors"
 require "recording_studio_dropbox/access_token"
+require "recording_studio_dropbox/oauth_provider"
+require "recording_studio_dropbox/oauth_token"
 require "recording_studio_dropbox/entry"
 require "recording_studio_dropbox/page"
 require "recording_studio_dropbox/downloaded_file"
@@ -23,6 +26,10 @@ module RecordingStudioDropbox
     def configure
       yield(configuration) if block_given?
       configuration
+    end
+
+    def register_oauth_provider(**overrides)
+      OauthProvider.register!(**overrides)
     end
   end
 end

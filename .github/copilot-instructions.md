@@ -4,7 +4,7 @@
 
 - This repository is the Recording Studio Dropbox gem. The public API is `RecordingStudioDropbox::Client`.
 - Preserve engine namespace isolation under `RecordingStudioDropbox`.
-- The product README is the source of truth for AccessToken and planned Oauth wiring.
+- The product README is the source of truth for OauthToken and AccessToken.
 - Keep changes small and scoped.
 
 ## UI Conventions

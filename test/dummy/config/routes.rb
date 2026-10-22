@@ -6,6 +6,8 @@ Rails.application.routes.draw do
   get "/recording_studio", to: redirect("/"), as: nil
   mount RecordingStudio::Engine, at: "/recording_studio"
   mount RecordingStudioRootSwitchable::Engine, at: "/recording_studio_root_switchable"
+  mount RecordingStudioOauth::Engine, at: "/recording_studio_oauth"
+  mount RecordingStudioApi::Engine, at: "/recording_studio_api"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -23,6 +25,10 @@ Rails.application.routes.draw do
   get "docs/recordings_tree", to: "docs#recordings_tree", as: :docs_recordings_tree
   get "docs/gem_views", to: "docs#gem_views", as: :docs_gem_views
   get "docs/methods", to: "docs#methods", as: :docs_methods
+
+  get "fake_oauth/authorize", to: "fake_dropbox_oauth#authorize"
+  post "fake_oauth/token", to: "fake_dropbox_oauth#token"
+  post "fake_oauth/revoke", to: "fake_dropbox_oauth#revoke"
 
   # Defines the root path route ("/")
   root "home#index"

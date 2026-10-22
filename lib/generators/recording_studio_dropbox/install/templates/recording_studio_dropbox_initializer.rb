@@ -1,3 +1,4 @@
 # frozen_string_literal: true
 
 RecordingStudioDropbox.configure
+RecordingStudioDropbox.register_oauth_provider

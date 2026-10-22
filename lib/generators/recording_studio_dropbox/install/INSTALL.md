@@ -1,3 +1,3 @@
 RecordingStudioDropbox is installed.
 
-Create a client with RecordingStudioDropbox::AccessToken. See the gem README for list, search, download, upload_file, and ReconnectRequired.
+Register the Dropbox Oauth provider, then resolve tokens with RecordingStudioDropbox::OauthToken. See the gem README for credentials keys, list, search, download, upload_file, and ReconnectRequired.

@@ -1,47 +1,60 @@
-<% dummy_page_nav(title: "Dropbox client", back_url: root_path) %>
+<% dummy_page_nav(title: "Dropbox", back_url: root_path) %>
 
 <div class="flex w-full flex-col gap-6">
   <%= render FlatPack::PageTitle::Component.new(
-    title: "Dropbox client",
-    subtitle: "This dummy app boots the Recording Studio Dropbox engine in a host.",
+    title: "Dropbox",
+    subtitle: dropbox_home_subtitle,
     variant: :h1
   ) %>
 
-  <div class="grid gap-6 lg:grid-cols-2">
-    <%= render FlatPack::Card::Component.new(style: :default) do |card| %>
-      <% card.header do %>
-        <%= render FlatPack::PageTitle::Component.new(
-          title: "What this gem does",
-          subtitle: "A Dropbox HTTP client. Tokens come from AccessToken.",
-          variant: :h3,
-          class: "mb-0 pb-0"
+  <% if notice.present? %>
+    <%= render FlatPack::Alert::Component.new(style: :success, title: notice) %>
+  <% end %>
+  <% if alert.present? %>
+    <%= render FlatPack::Alert::Component.new(style: :danger, title: alert) %>
+  <% end %>
+
+  <div class="flex flex-wrap gap-3">
+    <% if @dropbox_connection.nil? %>
+      <%= form_with url: recording_studio_oauth.outbound_connect_path(provider: "dropbox"), method: :post do %>
+        <%= hidden_field_tag :owner, "user" %>
+        <%= hidden_field_tag :return_to, root_path %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Connect Dropbox",
+          style: :primary,
+          size: :md,
+          type: "submit"
         ) %>
       <% end %>
-
-      <% card.body do %>
-        <ul class="space-y-3 text-sm leading-6">
-          <li>List and search folders with cursor paging.</li>
-          <li>Fetch metadata, download a file, and upload a file.</li>
-          <li>Large uploads use Dropbox upload sessions.</li>
-          <li>Expired, revoked, and missing-scope tokens raise ReconnectRequired.</li>
-        </ul>
-      <% end %>
-    <% end %>
-
-    <%= render FlatPack::Card::Component.new(style: :outlined) do |card| %>
-      <% card.header do %>
-        <%= render FlatPack::PageTitle::Component.new(
-          title: "Not in this release",
-          subtitle: "Later phases register this gem as an Attachable upload source.",
-          variant: :h3,
-          class: "mb-0 pb-0"
+    <% elsif @dropbox_connection.needs_reconnect? %>
+      <%= form_with url: recording_studio_oauth.outbound_connect_path(provider: "dropbox"), method: :post do %>
+        <%= hidden_field_tag :owner, "user" %>
+        <%= hidden_field_tag :return_to, root_path %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Reconnect Dropbox",
+          style: :danger,
+          size: :md,
+          type: "submit"
         ) %>
       <% end %>
-
-      <% card.body do %>
-        <p class="text-sm leading-6 text-(--surface-content-color)">
-          Oauth <code>connection_for</code> is not a dependency yet. Pass an AccessToken provider in tests or in the host until that gem ships.
-        </p>
+      <%= form_with url: recording_studio_oauth.outbound_connection_path(@dropbox_connection), method: :delete do %>
+        <%= hidden_field_tag :return_to, root_path %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Disconnect",
+          style: :secondary,
+          size: :md,
+          type: "submit"
+        ) %>
+      <% end %>
+    <% else %>
+      <%= form_with url: recording_studio_oauth.outbound_connection_path(@dropbox_connection), method: :delete do %>
+        <%= hidden_field_tag :return_to, root_path %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Disconnect",
+          style: :primary,
+          size: :md,
+          type: "submit"
+        ) %>
       <% end %>
     <% end %>
   </div>

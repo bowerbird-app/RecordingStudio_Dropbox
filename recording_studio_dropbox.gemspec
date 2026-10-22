@@ -9,9 +9,8 @@ Gem::Specification.new do |spec|
   spec.homepage    = "https://github.com/bowerbird-app/RecordingStudio_Dropbox"
   spec.summary     = "Dropbox API client for Recording Studio"
   spec.description = "Lists, downloads, and uploads Dropbox files for Recording Studio. " \
-                     "The client takes an access token through RecordingStudioDropbox::AccessToken. " \
-                     "Encrypted Dropbox tokens will come from RecordingStudioOauth.connection_for " \
-                     "once that gem ships."
+                     "Tokens come from RecordingStudioOauth.connection_for on a Dropbox " \
+                     "outbound provider registered by this gem."
   spec.license     = "MIT"
   spec.required_ruby_version = ">= 3.3.0"
 
@@ -29,4 +28,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", "~> 8.1.0"
   spec.add_dependency "recording_studio", "~> 4.2"
+  spec.add_dependency "recording_studio_oauth", ">= 0.14.1", "< 1.0"
 end

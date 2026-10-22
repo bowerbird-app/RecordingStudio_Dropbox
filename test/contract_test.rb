@@ -7,6 +7,13 @@ class ContractTest < Minitest::Test
     refute defined?(RecordingStudioDropbox::TokenProvider)
     assert_equal [%i[req provider]], RecordingStudioDropbox::AccessToken.instance_method(:initialize).parameters
     assert RecordingStudioDropbox::AccessToken.method_defined?(:to_s)
+    assert_equal(
+      [%i[keyreq root], %i[keyreq actor], %i[key provider]],
+      RecordingStudioDropbox::OauthToken.instance_method(:initialize).parameters
+    )
+    assert RecordingStudioDropbox::OauthToken.method_defined?(:call)
+    assert RecordingStudioDropbox::OauthToken.method_defined?(:access_token)
+    assert_respond_to RecordingStudioDropbox, :register_oauth_provider
   end
 
   def test_error_classes
