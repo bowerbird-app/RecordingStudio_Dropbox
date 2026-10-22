@@ -8,7 +8,7 @@ module RecordingStudioDropbox
 
     def call(path:, io:, chunk_size:)
       first = io.read(chunk_size).to_s
-      raise Error if first.empty?
+      raise Error, "Dropbox upload content is empty" if first.empty?
 
       rest = io.read(chunk_size)
       if rest.nil? || rest.empty?
@@ -52,7 +52,10 @@ module RecordingStudioDropbox
 
     def start_session(first)
       start = @transport.post_content("/2/files/upload_session/start", arg: {}, body: first)
-      Transport.parse_json(start.body).fetch("session_id")
+      session_id = Transport.parse_json(start.body)["session_id"]
+      raise RequestError, "Dropbox upload session is missing a session id" if session_id.nil? || session_id.to_s.empty?
+
+      session_id
     end
 
     def append(session_id, offset, chunk)

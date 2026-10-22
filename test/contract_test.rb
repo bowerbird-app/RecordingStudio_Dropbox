@@ -15,50 +15,51 @@ class ContractTest < Minitest::Test
     assert RecordingStudioDropbox::RequestError < RecordingStudioDropbox::Error
     refute defined?(RecordingStudioDropbox::ApiError)
     assert_equal(
-      [%i[key status], %i[key code]],
+      [%i[opt message], %i[key status], %i[key code]],
       RecordingStudioDropbox::RequestError.instance_method(:initialize).parameters
     )
-    assert RecordingStudioDropbox::RequestError.method_defined?(:status)
-    assert RecordingStudioDropbox::RequestError.method_defined?(:code)
+    error = RecordingStudioDropbox::RequestError.new("path/not_found/..", status: 409, code: "path")
+    assert_equal "path/not_found/..", error.message
+    assert_equal 409, error.status
+    assert_equal "path", error.code
   end
 
   def test_page_shape
     refute defined?(RecordingStudioDropbox::Listing)
-    assert_equal(
-      [%i[keyreq entries], %i[keyreq next_cursor]],
-      RecordingStudioDropbox::Page.instance_method(:initialize).parameters
-    )
+    assert_equal %i[entries next_cursor], RecordingStudioDropbox::Page.members
     page = RecordingStudioDropbox::Page.new(entries: [], next_cursor: nil)
     assert_equal [], page.entries
     assert_nil page.next_cursor
     refute page.more?
+    refute RecordingStudioDropbox::Page.new(entries: [], next_cursor: "").more?
   end
 
   def test_downloaded_file_shape
-    assert_equal(
-      [%i[keyreq body], %i[keyreq filename], %i[key content_type]],
-      RecordingStudioDropbox::DownloadedFile.instance_method(:initialize).parameters
-    )
+    assert_equal %i[body filename content_type], RecordingStudioDropbox::DownloadedFile.members
     file = RecordingStudioDropbox::DownloadedFile.new(body: "x", filename: "a.pdf", content_type: "application/pdf")
     assert_equal "x", file.body
     assert_equal "a.pdf", file.filename
     assert_equal "application/pdf", file.content_type
+    assert_nil RecordingStudioDropbox::DownloadedFile.new(body: "x", filename: "a.pdf", content_type: nil).content_type
     refute file.respond_to?(:bytes)
   end
 
   def test_client_signatures
     client = RecordingStudioDropbox::Client
     assert_equal [%i[keyreq token_provider]], client.instance_method(:initialize).parameters
-    assert_equal [%i[key path], %i[key cursor]], client.instance_method(:list_folder).parameters
     assert_equal(
-      [%i[keyreq query], %i[key path], %i[key cursor]],
+      [%i[key path], %i[key cursor], %i[key page_size]],
+      client.instance_method(:list_folder).parameters
+    )
+    assert_equal(
+      [%i[keyreq query], %i[key cursor], %i[key page_size]],
       client.instance_method(:search).parameters
     )
     assert_equal [%i[keyreq path]], client.instance_method(:metadata).parameters
     assert_equal [%i[keyreq path]], client.instance_method(:download).parameters
     assert_equal(
-      [%i[keyreq path], %i[keyreq content], %i[key chunk_size]],
-      client.instance_method(:upload).parameters
+      [%i[keyreq path], %i[keyreq content], %i[keyreq content_type], %i[key chunk_size]],
+      client.instance_method(:upload_file).parameters
     )
   end
 

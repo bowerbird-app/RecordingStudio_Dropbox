@@ -5,6 +5,12 @@ require "test_helper"
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
     assert_equal "0.1.0", ::RecordingStudioDropbox::VERSION
+    gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
+    ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
+
+    assert_includes gemspec, 'spec.required_ruby_version = ">= 3.3.0"'
+    refute_includes gemspec, '">= 3.3.12"'
+    assert_equal "3.3.12", ruby_version
   end
 
   def test_engine_exists
@@ -47,6 +53,32 @@ class RecordingStudioDropboxTest < Minitest::Test
     install_script = File.read(File.expand_path("../.cursor/install.sh", __dir__))
 
     assert_includes install_script, "fetch-skills.sh"
+    refute_includes install_script, "Writing dummy master.key from RAILS_MASTER_KEY"
+    refute_includes install_script, "Dummy credentials"
+  end
+
+  def test_dummy_does_not_read_rails_credentials
+    dummy_root = File.expand_path("dummy", __dir__)
+    credentials_path = File.join(dummy_root, "config/credentials.yml.enc")
+    gitignore = File.read(File.expand_path("../.gitignore", __dir__))
+
+    refute File.exist?(credentials_path)
+    refute File.exist?(File.expand_path("dummy_credentials_test.rb", __dir__))
+    refute File.exist?(File.join(dummy_root, "test/credentials_test.rb"))
+    assert_includes gitignore, "test/dummy/config/master.key"
+    assert_includes gitignore, "config/master.key"
+
+    Dir.glob("#{dummy_root}/**/*.{rb,yml,erb}").each do |path|
+      File.foreach(path) do |line|
+        next if line.match?(/\A\s*#/)
+
+        refute_includes(
+          line,
+          "Rails.application.credentials",
+          "#{path.delete_prefix("#{dummy_root}/")} reads Rails.application.credentials"
+        )
+      end
+    end
   end
 
   def test_dummy_gemfile_pins_verified_4x_github_tags
@@ -209,6 +241,8 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "AccessToken"
     assert_includes readme, "connection_for"
     assert_includes readme, "ReconnectRequired"
+    assert_includes readme, "`content_type` is always `nil`"
+    refute_includes readme, "Dummy credentials"
     refute_includes readme, "Template Demo"
     refute_includes readme, "ExampleService"
     refute_includes readme, "RecordingStudio_gem_template"

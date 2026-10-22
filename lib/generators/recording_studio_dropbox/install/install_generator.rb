@@ -13,13 +13,6 @@ module RecordingStudioDropbox
         template "recording_studio_dropbox_initializer.rb", "config/initializers/recording_studio_dropbox.rb"
       end
 
-      def add_yaml_config
-        prompt = "Add config/recording_studio_dropbox.yml for environment-specific settings? [y/N]"
-        return unless yes?(prompt)
-
-        template "recording_studio_dropbox.yml", "config/recording_studio_dropbox.yml"
-      end
-
       def show_readme
         readme "INSTALL.md" if behavior == :invoke
       end

@@ -3,25 +3,25 @@
 module RecordingStudioDropbox
   class AccessToken
     def initialize(provider)
-      raise ArgumentError if provider.is_a?(String)
+      raise ArgumentError, "Dropbox access tokens cannot be a raw string" if string_provider?(provider)
+      unless provider.respond_to?(:call) || provider.respond_to?(:access_token)
+        raise ArgumentError, "Dropbox access token provider must respond to call or access_token"
+      end
 
       @provider = provider
     end
 
     def to_s
-      token = read_token
-      raise ReconnectRequired if token.nil? || token.to_s.strip.empty?
+      token = @provider.respond_to?(:call) ? @provider.call : @provider.access_token
+      raise ReconnectRequired, "Dropbox access token is blank" if token.nil? || token.to_s.strip.empty?
 
       token.to_s
     end
 
     private
 
-    def read_token
-      return @provider.call if @provider.respond_to?(:call)
-      return @provider.access_token if @provider.respond_to?(:access_token)
-
-      raise ArgumentError
+    def string_provider?(provider)
+      provider.instance_of?(String)
     end
   end
 end

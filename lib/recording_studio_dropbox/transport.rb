@@ -2,13 +2,14 @@
 
 require "json"
 require "net/http"
+require "openssl"
+require "timeout"
 require "uri"
 
 module RecordingStudioDropbox
   class Transport
     API_HOST = "api.dropboxapi.com"
     CONTENT_HOST = "content.dropboxapi.com"
-    ALLOWED_HOSTS = [API_HOST, CONTENT_HOST].freeze
     RECONNECT_CODES = %w[invalid_grant expired_access_token invalid_access_token missing_scope].freeze
     TLS_START_OPTIONS = {
       use_ssl: true,
@@ -19,12 +20,9 @@ module RecordingStudioDropbox
     }.freeze
 
     def self.parse_json(raw)
-      text = raw.to_s
-      return {} if text.strip.empty?
-
-      JSON.parse(text)
+      JSON.parse(raw.to_s)
     rescue JSON::ParserError
-      {}
+      raise RequestError, "Dropbox returned invalid JSON"
     end
 
     def initialize(token_provider:)
@@ -64,27 +62,39 @@ module RecordingStudioDropbox
     end
 
     def perform(uri, request)
-      raise Error, "Refusing Dropbox request to #{uri.host}" unless ALLOWED_HOSTS.include?(uri.host)
-
       Net::HTTP.start(uri.host, uri.port, **TLS_START_OPTIONS) do |http|
         http.request(request)
       end
+    rescue SystemCallError, IOError, Timeout::Error, SocketError, OpenSSL::SSL::SSLError, Net::ProtocolError
+      raise RequestError, "Dropbox request failed"
     end
 
     def parse_json_response(response)
-      body = self.class.parse_json(response.body)
-      raise_for_failure!(response, body) unless success?(response)
+      raise_for_failure!(response) unless success?(response)
 
-      body
+      self.class.parse_json(response.body)
     end
 
-    def raise_for_failure!(response, body = nil)
-      parsed = body || self.class.parse_json(response.body)
+    def raise_for_failure!(response)
+      parsed = parse_error_body(response.body)
       code = error_code(parsed)
       status = response.code.to_i
-      raise ReconnectRequired if reconnect?(status, code)
+      raise ReconnectRequired, "Dropbox access token is no longer valid" if reconnect?(status, code)
 
-      raise RequestError.new(status: status, code: code)
+      raise RequestError.new(error_summary_message(parsed), status: status, code: code)
+    end
+
+    def parse_error_body(raw)
+      JSON.parse(raw.to_s)
+    rescue JSON::ParserError
+      {}
+    end
+
+    def error_summary_message(parsed)
+      summary = parsed["error_summary"].to_s
+      return summary unless summary.empty?
+
+      "Dropbox request failed"
     end
 
     def reconnect?(status, code)

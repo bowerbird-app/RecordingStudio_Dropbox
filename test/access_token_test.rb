@@ -19,18 +19,31 @@ class AccessTokenTest < Minitest::Test
   end
 
   def test_blank_token_raises_reconnect_required
-    assert_raises(RecordingStudioDropbox::ReconnectRequired) do
+    error = assert_raises(RecordingStudioDropbox::ReconnectRequired) do
       RecordingStudioDropbox::AccessToken.new(-> { "  " }).to_s
     end
+
+    assert_equal "Dropbox access token is blank", error.message
   end
 
   def test_nil_token_raises_reconnect_required
-    assert_raises(RecordingStudioDropbox::ReconnectRequired) do
+    error = assert_raises(RecordingStudioDropbox::ReconnectRequired) do
       RecordingStudioDropbox::AccessToken.new(-> {}).to_s
     end
+
+    assert_equal "Dropbox access token is blank", error.message
   end
 
   def test_string_provider_raises_argument_error
-    assert_raises(ArgumentError) { RecordingStudioDropbox::AccessToken.new("sl.token") }
+    error = assert_raises(ArgumentError) { RecordingStudioDropbox::AccessToken.new("sl.token") }
+
+    assert_equal "Dropbox access tokens cannot be a raw string", error.message
+    refute_includes error.message, "sl.token"
+  end
+
+  def test_provider_without_call_or_access_token_raises_argument_error
+    error = assert_raises(ArgumentError) { RecordingStudioDropbox::AccessToken.new(Object.new) }
+
+    assert_equal "Dropbox access token provider must respond to call or access_token", error.message
   end
 end

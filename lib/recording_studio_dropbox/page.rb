@@ -1,16 +1,9 @@
 # frozen_string_literal: true
 
 module RecordingStudioDropbox
-  class Page
-    attr_reader :entries, :next_cursor
-
-    def initialize(entries:, next_cursor:)
-      @entries = entries
-      @next_cursor = next_cursor
-    end
-
+  Page = Data.define(:entries, :next_cursor) do
     def more?
-      !next_cursor.nil?
+      !(next_cursor.nil? || next_cursor.empty?)
     end
   end
 end

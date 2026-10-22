@@ -22,6 +22,12 @@ class InstallGeneratorTest < Minitest::Test
 
     refute_includes generator.class.instance_methods(false), :mount_engine
     refute_includes generator.class.instance_methods(false), :add_tailwind_source
+    refute_includes generator.class.instance_methods(false), :add_yaml_config
+    yaml_template = File.expand_path(
+      "../lib/generators/recording_studio_dropbox/install/templates/recording_studio_dropbox.yml",
+      __dir__
+    )
+    refute File.exist?(yaml_template)
   end
 
   def test_show_readme_displays_install_guide_for_invoke_behavior

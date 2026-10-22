@@ -8,10 +8,10 @@ module RecordingStudioDropbox
   class RequestError < Error
     attr_reader :status, :code
 
-    def initialize(status: nil, code: nil)
+    def initialize(message = nil, status: nil, code: nil)
       @status = status
       @code = code
-      super()
+      super(message)
     end
   end
 end

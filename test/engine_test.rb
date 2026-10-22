@@ -34,32 +34,18 @@ class EngineTest < Minitest::Test
       hook_payload = cfg
     end
 
-    xcfg = Struct.new(:recording_studio_dropbox).new({})
-    app_config = Struct.new(:x).new(xcfg)
-    app = Struct.new(:config) do
-      def config_for(_name)
-        {}
-      end
-    end.new(app_config)
-
-    find_initializer("recording_studio_dropbox.load_config").block.call(app)
+    find_initializer("recording_studio_dropbox.load_config").block.call(Object.new)
 
     assert hook_called
     assert_equal RecordingStudioDropbox.configuration, hook_payload
   end
 
-  def test_load_config_handles_missing_yaml
-    xcfg = Struct.new(:recording_studio_dropbox).new({})
-    app_config = Struct.new(:x).new(xcfg)
-    app = Struct.new(:config) do
-      def config_for(_name)
-        raise Errno::ENOENT
-      end
-    end.new(app_config)
+  def test_load_config_does_not_read_yaml_or_config_x
+    source = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
 
-    find_initializer("recording_studio_dropbox.load_config").block.call(app)
-
-    assert_instance_of RecordingStudio::Hooks, RecordingStudioDropbox.configuration.hooks
+    refute_includes source, "config_for"
+    refute_includes source, "RuntimeError"
+    refute_includes source, "merge!"
   end
 
   def test_engine_does_not_apply_host_extensions

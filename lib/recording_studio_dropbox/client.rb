@@ -12,24 +12,23 @@ module RecordingStudioDropbox
       @transport = Transport.new(token_provider: token_provider)
     end
 
-    def list_folder(path: "", cursor: nil)
+    def list_folder(path: "", cursor: nil, page_size: nil)
       if cursor
         page_from_folder(@transport.post_json("/2/files/list_folder/continue", { cursor: cursor }))
       else
-        page_from_folder(@transport.post_json("/2/files/list_folder", { path: normalize_folder_path(path) }))
+        payload = { path: normalize_folder_path(path) }
+        payload[:limit] = page_size unless page_size.nil?
+        page_from_folder(@transport.post_json("/2/files/list_folder", payload))
       end
     end
 
-    def search(query:, path: "", cursor: nil)
+    def search(query:, cursor: nil, page_size: nil)
       if cursor
         page_from_search(@transport.post_json("/2/files/search/continue_v2", { cursor: cursor }))
       else
-        page_from_search(
-          @transport.post_json(
-            "/2/files/search_v2",
-            { query: query, options: { path: normalize_folder_path(path) } }
-          )
-        )
+        payload = { query: query }
+        payload[:options] = { max_results: page_size } unless page_size.nil?
+        page_from_search(@transport.post_json("/2/files/search_v2", payload))
       end
     end
 
@@ -40,15 +39,15 @@ module RecordingStudioDropbox
     def download(path:)
       normalized = normalize_entry_path(path)
       response = @transport.post_content("/2/files/download", arg: { path: normalized })
-      result = Transport.parse_json(response["Dropbox-API-Result"])
       DownloadedFile.new(
         body: response.body.to_s,
-        filename: filename_from(result, normalized),
-        content_type: response["Content-Type"]
+        filename: filename_from(download_result(response), normalized),
+        content_type: nil
       )
     end
 
-    def upload(path:, content:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
+    def upload_file(path:, content:, content_type:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
+      _shared_content_type = content_type
       Upload.new(transport: @transport).call(
         path: normalize_entry_path(path),
         io: content_io(content),
@@ -76,6 +75,13 @@ module RecordingStudioDropbox
       body["has_more"] == true ? body["cursor"] : nil
     end
 
+    def download_result(response)
+      header = response["Dropbox-API-Result"].to_s
+      return {} if header.strip.empty?
+
+      Transport.parse_json(header)
+    end
+
     def filename_from(result, path)
       name = result["name"].to_s
       return name unless name.empty?
@@ -91,7 +97,7 @@ module RecordingStudioDropbox
     end
 
     def normalize_folder_path(path)
-      raw = path.to_s
+      raw = path.to_s.strip
       return "" if raw.empty? || raw == "/"
       return raw if prefixed_path?(raw) || raw.start_with?("/")
 
@@ -100,7 +106,7 @@ module RecordingStudioDropbox
 
     def normalize_entry_path(path)
       raw = path.to_s.strip
-      raise Error if raw.empty?
+      raise Error, "Dropbox path is blank" if raw.empty?
       return raw if prefixed_path?(raw) || raw.start_with?("/")
 
       "/#{raw}"

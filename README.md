@@ -14,9 +14,11 @@ It does not register an Attachable upload source in this release. That work is a
 | `search` | `/2/files/search_v2` and `/2/files/search/continue_v2` |
 | `metadata` | `/2/files/get_metadata` |
 | `download` | `/2/files/download` |
-| `upload` | `/2/files/upload`, or a session (`start`, `append_v2`, `finish`) when the body is larger than 8 MiB |
+| `upload_file` | `/2/files/upload`, or a session (`start`, `append_v2`, `finish`) when the body is larger than 8 MiB |
 
-`list_folder` and `search` return a `Page` with `entries`, `next_cursor` (nil when there are no more pages), and `more?`. Pass `cursor:` to fetch the next page. Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`.
+`list_folder(path:, cursor:, page_size:)` and `search(query:, cursor:, page_size:)` return a `Page` with `entries`, `next_cursor` (nil when there are no more pages), and `more?` (`false` for a nil or empty cursor). Pass `cursor:` to fetch the next page. `upload_file` takes a required `content_type:` argument to match the Google Drive client; Dropbox ignores it.
+
+Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`. `content_type` is always `nil`, because Dropbox does not give a real MIME type.
 
 HTTP uses `Net::HTTP`, the same client Recording Studio Attachable uses for Dropbox today. There is no Dropbox SDK.
 
@@ -95,7 +97,7 @@ bundle install
 bin/rails generate recording_studio_dropbox:install
 ```
 
-The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`. Dummy credentials use the shared Recording Studio development master key. Set `RAILS_MASTER_KEY` or put that key in `test/dummy/config/master.key`. Do not mint a new master key.
+The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`.
 
 ## Version
 
