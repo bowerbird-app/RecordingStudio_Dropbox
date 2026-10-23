@@ -84,7 +84,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
       get dropbox_imports_path
       assert_response :success
       assert_includes response.body, "Briefs"
-      assert_includes response.body, "path=/Briefs"
+      assert_includes response.body, "path=%2FBriefs"
 
       get dropbox_imports_path(path: "/Briefs")
     end
