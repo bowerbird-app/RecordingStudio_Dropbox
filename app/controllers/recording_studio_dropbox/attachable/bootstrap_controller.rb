@@ -6,7 +6,6 @@ module RecordingStudioDropbox
       def show
         authorize_provider_upload!
         ensure_provider_available!
-        ensure_chooser_configured!
 
         render json: bootstrap_payload
       rescue RecordingStudioAttachable::DependencyUnavailableError => e
@@ -26,7 +25,7 @@ module RecordingStudioDropbox
       end
 
       def auth_flags
-        Integration.chooser_access(root: dropbox_root, actor: current_attachable_actor)
+        Registration.chooser_access(root: dropbox_root, actor: current_attachable_actor)
         [false, false]
       rescue RecordingStudioDropbox::ReconnectRequired, RecordingStudioAttachable::ReconnectRequired
         [true, true]

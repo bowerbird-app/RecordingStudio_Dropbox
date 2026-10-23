@@ -38,14 +38,14 @@ module RecordingStudioDropbox
       parse_json_response(perform(uri, request))
     end
 
-    def post_content(path, arg:, body: nil)
+    def post_content(path, arg:, body: nil, max_bytes: nil)
       uri = URI("https://#{CONTENT_HOST}#{path}")
       request = Net::HTTP::Post.new(uri)
       request["Authorization"] = bearer
       request["Dropbox-API-Arg"] = encode_api_arg(arg)
       request["Content-Type"] = "application/octet-stream"
       request.body = body unless body.nil?
-      response = perform(uri, request)
+      response = perform(uri, request, max_bytes: max_bytes)
       raise_for_failure!(response) unless success?(response)
 
       response
@@ -61,12 +61,31 @@ module RecordingStudioDropbox
       JSON.generate(arg, ascii_only: true).gsub("\u007F", '\u007f')
     end
 
-    def perform(uri, request)
+    def perform(uri, request, max_bytes: nil)
       Net::HTTP.start(uri.host, uri.port, **TLS_START_OPTIONS) do |http|
-        http.request(request)
+        next http.request(request) if max_bytes.nil?
+
+        stream_request(http, request, max_bytes)
       end
     rescue SystemCallError, IOError, Timeout::Error, SocketError, OpenSSL::SSL::SSLError, Net::ProtocolError
       raise RequestError, "Dropbox request failed"
+    end
+
+    def stream_request(http, request, max_bytes)
+      streamed = nil
+      http.request(request) do |response|
+        streamed = read_limited_response(response, max_bytes)
+      end
+      streamed
+    end
+
+    def read_limited_response(response, max_bytes)
+      return response.tap(&:body) unless success?(response)
+
+      limited = LimitedBody.new(max_bytes)
+      response.read_body { |chunk| limited.append(chunk) }
+      response.define_singleton_method(:body) { limited.to_s }
+      response
     end
 
     def parse_json_response(response)

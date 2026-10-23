@@ -20,7 +20,6 @@ class RecordingStudioDropboxTest < Minitest::Test
   def test_attachable_add_on_uses_public_hooks
     attachable = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable.rb", __dir__))
     engine = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
-    integration = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable/integration.rb", __dir__))
     registration = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable/registration.rb", __dir__))
     bootstrap = File.read(
       File.expand_path("../app/controllers/recording_studio_dropbox/attachable/bootstrap_controller.rb", __dir__)
@@ -30,14 +29,15 @@ class RecordingStudioDropboxTest < Minitest::Test
     )
 
     assert_includes engine, "ActiveSupport.on_load(:recording_studio_attachable)"
+    assert_includes engine, "Gem::Version.new(RecordingStudioAttachable::VERSION)"
     assert_includes attachable, "register_adapter_routes(:dropbox)"
     assert_includes attachable, 'mount RecordingStudioDropbox::Attachable::Engine, at: "/dropbox", as: :dropbox'
-    assert_includes integration, "register_upload_provider"
+    attachable_engine = File.read(
+      File.expand_path("../lib/recording_studio_dropbox/attachable/engine.rb", __dir__)
+    )
+    assert_includes attachable_engine, "register_upload_provider"
     assert_includes registration, "reconnect_error:"
     assert_includes registration, "connect:"
-    refute_includes integration, "Adapter::ClientPicker"
-    refute_includes integration, "Adapter::Configurable"
-    refute_includes integration, "register_adapter_configuration"
     refute_includes registration, "Adapter::ClientPicker"
     refute_includes registration, "Adapter::Configurable"
     assert_includes registration, "context:"
@@ -52,7 +52,7 @@ class RecordingStudioDropboxTest < Minitest::Test
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.2"'
     assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.14.1", "< 1.0"'
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_attachable", ">= 0.21.0", "< 1.0"'
+    refute_includes gemspec, 'spec.add_dependency "recording_studio_attachable"'
   end
 
   def test_gemspec_excludes_cursor_config

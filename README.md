@@ -22,7 +22,15 @@ Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`.
 
 HTTP uses `Net::HTTP`, the same client Recording Studio Attachable uses for Dropbox today. There is no Dropbox SDK.
 
-Oauth registration uses `files.metadata.read` and `files.content.read`. `Client#upload_file` still needs `files.content.write` if you pass that scope yourself.
+Oauth registration uses `files.metadata.read` and `files.content.read`. Override that default through `RecordingStudioDropbox.configure` if you need more:
+
+```ruby
+RecordingStudioDropbox.configure do |config|
+  config.scopes = %w[files.metadata.read files.content.read files.content.write]
+end
+```
+
+`Client#upload_file` still needs `files.content.write` in that list.
 
 ## Shared shape with Google Drive
 
@@ -63,19 +71,20 @@ Tests can still pass a callable and stub `Net::HTTP`. They should not hit Dropbo
 
 `RecordingStudioDropbox::AccessToken.new(provider)` still reads `#call` first, then `#access_token`. A raw String is a misconfiguration and raises `ArgumentError`. A blank or nil token at request time raises `ReconnectRequired`.
 
-`RecordingStudioDropbox.configure` yields the configuration and returns it.
+`RecordingStudioDropbox.configure` yields the configuration and returns it. Dropbox options live there (`enabled`, `client_id`, `page_size`, `scopes`). Hosts do not set them on Attachable `config.dropbox`.
 
 ## Attachable upload add-on
 
 The add-on loads only when `RecordingStudioAttachable` is present. It uses Attachable's public hooks: `ActiveSupport.on_load(:recording_studio_attachable)`, `register_upload_provider`, and `register_adapter_routes(:dropbox)`.
 
-Turn it on in the host initializer:
+Turn it on in the host initializer. Attachable is optional; skip it if you only need the Dropbox client.
 
 ```ruby
 RecordingStudioDropbox.configure do |config|
   config.enabled = true
   config.client_id = "your-dropbox-app-key"
   config.page_size = 25
+  config.scopes = %w[files.metadata.read files.content.read]
 end
 ```
 

@@ -3,15 +3,17 @@
 module RecordingStudioDropbox
   class Configuration
     PLACEHOLDER_CLIENT_IDS = ["dummy-dropbox-client-id"].freeze
+    DEFAULT_SCOPES = %w[files.metadata.read files.content.read].freeze
 
     attr_reader :hooks
-    attr_accessor :enabled, :client_id, :page_size
+    attr_accessor :enabled, :client_id, :page_size, :scopes
 
     def initialize
       @hooks = RecordingStudio::Hooks.new
       @enabled = false
       @client_id = nil
       @page_size = 25
+      @scopes = DEFAULT_SCOPES.dup
     end
 
     def enabled?

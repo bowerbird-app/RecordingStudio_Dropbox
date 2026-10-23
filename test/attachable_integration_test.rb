@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "recording_studio_dropbox/attachable/integration"
+require "recording_studio_dropbox/attachable/registration"
 require "recording_studio_dropbox/attachable/import"
 
 class AttachableIntegrationTest < Minitest::Test
@@ -9,10 +9,10 @@ class AttachableIntegrationTest < Minitest::Test
     dropbox_error = RecordingStudioDropbox::ReconnectRequired.new("reconnect")
     other = RecordingStudioDropbox::RequestError.new("nope", status: 500)
 
-    assert RecordingStudioDropbox::Attachable::Integration.reconnect_required?(dropbox_error)
-    refute RecordingStudioDropbox::Attachable::Integration.reconnect_required?(other)
-    assert RecordingStudioDropbox::Attachable::Integration.request_error?(other)
-    refute RecordingStudioDropbox::Attachable::Integration.request_error?(dropbox_error)
+    assert RecordingStudioDropbox::Attachable::Registration.reconnect_required?(dropbox_error)
+    refute RecordingStudioDropbox::Attachable::Registration.reconnect_required?(other)
+    assert RecordingStudioDropbox::Attachable::Registration.request_error?(other)
+    refute RecordingStudioDropbox::Attachable::Registration.request_error?(dropbox_error)
   end
 
   def test_root_for_uses_the_recording_root_when_present
@@ -20,8 +20,8 @@ class AttachableIntegrationTest < Minitest::Test
     child = Object.new
     child.define_singleton_method(:root_recording) { root }
 
-    assert_equal root, RecordingStudioDropbox::Attachable::Integration.root_for(child)
-    assert_equal root, RecordingStudioDropbox::Attachable::Integration.root_for(root)
+    assert_equal root, RecordingStudioDropbox::Attachable::Registration.root_for(child)
+    assert_equal root, RecordingStudioDropbox::Attachable::Registration.root_for(root)
   end
 
   def test_selection_from_reads_ids_from_strings_and_provider_payloads
@@ -61,5 +61,37 @@ class AttachableIntegrationTest < Minitest::Test
     )
     refute result.success?
     assert_includes result.error, "Select at least one"
+  end
+
+  def test_import_refuses_oversized_metadata_before_download
+    downloaded = false
+    client = Object.new
+    client.define_singleton_method(:fetch_file) do |**|
+      RecordingStudioDropbox::Entry.new(
+        id: "id:file-1",
+        name: "Huge.pdf",
+        path: "/Huge.pdf",
+        tag: "file",
+        size: 26 * 1024 * 1024
+      )
+    end
+    client.define_singleton_method(:download) do |**|
+      downloaded = true
+      raise "download should not run"
+    end
+
+    result = RecordingStudioDropbox::Attachable::Import.stub(:attachable_max_file_size, 10) do
+      RecordingStudioDropbox::Attachable::Registration.stub(:client, ->(**) { client }) do
+        RecordingStudioDropbox::Attachable::Import.remote_files(
+          parent_recording: Object.new,
+          attachments: ["id:file-1"],
+          actor: Object.new
+        )
+      end
+    end
+
+    refute downloaded
+    refute result.success?
+    assert_includes result.error, "size limit"
   end
 end

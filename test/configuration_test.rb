@@ -32,5 +32,7 @@ class ConfigurationTest < Minitest::Test
     @configuration.client_id = "real-dropbox-app-key"
     assert_predicate @configuration, :available?
     assert_equal 25, @configuration.page_size
+    assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, @configuration.scopes
+    assert_equal RecordingStudioDropbox::Client::SCOPES, @configuration.scopes
   end
 end

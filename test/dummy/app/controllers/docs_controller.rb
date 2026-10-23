@@ -63,7 +63,7 @@ class DocsController < ApplicationController
 
   def tree_hidden_recording?(recording)
     name = recording.recordable_type.to_s.demodulize
-    name == "Access" || name == "AccessBoundary"
+    name == "Access"
   end
 
   def build_recording_node(recording, recordings_by_parent_id)

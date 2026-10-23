@@ -8,7 +8,7 @@ module RecordingStudioDropbox
       def connection(root:, actor:)
         return unless defined?(::RecordingStudioOauth)
 
-        ::RecordingStudioOauth.connection_for(provider: Integration::PROVIDER_KEY, root: root, actor: actor)
+        ::RecordingStudioOauth.connection_for(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
       end
 
       def connection_status(root:, actor:)
@@ -28,7 +28,7 @@ module RecordingStudioDropbox
       def live_connection(actor:)
         return unless defined?(::RecordingStudioOauth::OutboundConnection)
 
-        ::RecordingStudioOauth::OutboundConnection.live.for_provider(Integration::PROVIDER_KEY).find_by(
+        ::RecordingStudioOauth::OutboundConnection.live.for_provider(Registration::PROVIDER_KEY).find_by(
           owner_actor: actor
         )
       end
@@ -37,7 +37,7 @@ module RecordingStudioDropbox
         return unless defined?(::RecordingStudioOauth)
 
         ::RecordingStudioOauth::Engine.routes.url_helpers.outbound_connect_path(
-          provider: Integration::PROVIDER_KEY
+          provider: Registration::PROVIDER_KEY
         )
       end
 

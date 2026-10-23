@@ -12,23 +12,23 @@ module RecordingStudioDropbox
       end
 
       def dropbox_root
-        Integration.root_for(@recording || find_recording)
+        Registration.root_for(@recording || find_recording)
       end
 
       def dropbox_client
-        Integration.client(root: dropbox_root, actor: current_attachable_actor)
+        Registration.client(root: dropbox_root, actor: current_attachable_actor)
       end
 
       def dropbox_connected?
-        Integration.connection(root: dropbox_root, actor: current_attachable_actor).present?
+        Oauth.connection(root: dropbox_root, actor: current_attachable_actor).present?
       end
 
       def dropbox_reconnect?
-        Integration.connection_status(root: dropbox_root, actor: current_attachable_actor) == :needs_reconnect
+        Oauth.connection_status(root: dropbox_root, actor: current_attachable_actor) == :needs_reconnect
       end
 
       def oauth_connect_path
-        Integration.oauth_connect_path
+        Oauth.oauth_connect_path
       end
 
       def oauth_return_to(popup:)
@@ -37,16 +37,6 @@ module RecordingStudioDropbox
         else
           recording_imports_path(@recording, **upload_flow_params)
         end
-      end
-
-      def ensure_chooser_configured!
-        return if dropbox_configuration.chooser_configured?
-
-        raise RecordingStudioAttachable::DependencyUnavailableError,
-              I18n.t(
-                "recording_studio_dropbox.chooser_requires_config",
-                default: "Dropbox Chooser needs an app key"
-              )
       end
 
       def connect_reload_url

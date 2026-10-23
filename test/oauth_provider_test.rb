@@ -40,4 +40,25 @@ class OauthProviderTest < Minitest::Test
     assert_equal "/fake_oauth/authorize", provider.authorize_url
     assert_equal "/fake_oauth/token", provider.token_url
   end
+
+  def test_configure_scopes_override_is_used_when_registering
+    original = RecordingStudioDropbox.configuration.scopes
+    RecordingStudioDropbox.configuration.scopes = %w[
+      files.metadata.read
+      files.content.read
+      files.content.write
+    ]
+
+    provider = RecordingStudioDropbox.register_oauth_provider(
+      client_id: "id",
+      client_secret: SECRET,
+      http: ->(_url, _params) { [200, {}] }
+    )
+
+    assert_equal %w[files.metadata.read files.content.read files.content.write], provider.scopes
+    assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, RecordingStudioDropbox::Client::SCOPES
+    refute_includes RecordingStudioDropbox::OauthProvider::SCOPES, "files.content.write"
+  ensure
+    RecordingStudioDropbox.configuration.scopes = original
+  end
 end

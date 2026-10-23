@@ -18,7 +18,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
       @user.save!
     end
     sign_in @user
-    @workspace = Workspace.first || Workspace.find_or_create_by!(name: "Studio Workspace")
+    @workspace = Workspace.find_by(name: "Studio Workspace") || Workspace.find_or_create_by!(name: "Studio Workspace")
     Current.actor = @user
     @root = RecordingStudio.root_recording_for(@workspace)
     grant_workspace_access!(@root)
@@ -96,6 +96,36 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Brief.pdf"
   end
 
+  test "file-list page searches dropbox files" do
+    follow_connect!
+
+    with_dropbox_client(listing_client) do
+      get dropbox_imports_path(query: "Brief.pdf")
+    end
+
+    assert_response :success
+    assert_includes response.body, "Brief.pdf"
+    refute_includes response.body, "Nested.pdf"
+    refute_includes response.body, "Briefs"
+  end
+
+  test "file-list page follows a non-nil page token to the next page" do
+    follow_connect!
+
+    with_dropbox_client(listing_client) do
+      get dropbox_imports_path
+      assert_response :success
+      assert_includes response.body, "Brief.pdf"
+      assert_includes response.body, "page_token=page-2"
+
+      get dropbox_imports_path(page_token: "page-2")
+    end
+
+    assert_response :success
+    assert_includes response.body, "PageTwo.pdf"
+    refute_includes response.body, "Brief.pdf"
+  end
+
   test "connected import lists files and copies a selected file into storage" do
     follow_connect!
 
@@ -115,6 +145,23 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     assert imported.any? { |recording| recording.recordable.original_filename == "Brief.pdf" }
     assert_nil session["recording_studio_attachable_dropbox"]
     refute_includes response.body, "fake-access-"
+  end
+
+  test "connected import copies multiple selected files into storage" do
+    follow_connect!
+
+    with_dropbox_client(import_client) do
+      post dropbox_imports_path, params: { file_ids: ["id:file-1", "id:file-2"] }
+    end
+
+    assert_response :redirect
+    imported = RecordingStudio::Recording.unscoped.where(
+      parent_recording_id: @root.id,
+      recordable_type: "RecordingStudioAttachable::Attachment"
+    )
+    names = imported.map { |recording| recording.recordable.original_filename }
+    assert_includes names, "Brief.pdf"
+    assert_includes names, "PageTwo.pdf"
   end
 
   test "imports index shows reconnect when the Dropbox gem requires it" do
@@ -156,7 +203,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
   test "bootstrap returns chooser client_id when connected" do
     follow_connect!
 
-    RecordingStudioDropbox::Attachable::Integration.stub(:chooser_access, "token-1") do
+    RecordingStudioDropbox::Attachable::Registration.stub(:chooser_access, "token-1") do
       get dropbox_bootstrap_path, as: :json
     end
 
@@ -174,7 +221,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
   test "bootstrap returns a connect payload when reconnect is required" do
     follow_connect!
 
-    RecordingStudioDropbox::Attachable::Integration.stub(
+    RecordingStudioDropbox::Attachable::Registration.stub(
       :chooser_access,
       ->(*) { raise RecordingStudioDropbox::ReconnectRequired, "Reconnect Dropbox" }
     ) do
@@ -242,7 +289,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
   end
 
   def with_dropbox_client(client, &block)
-    RecordingStudioDropbox::Attachable::Integration.stub(:client, ->(**) { client }, &block)
+    RecordingStudioDropbox::Attachable::Registration.stub(:client, ->(**) { client }, &block)
   end
 
   def listing_client
@@ -266,30 +313,75 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
       tag: "file",
       size: 8
     )
+    page_two_file = RecordingStudioDropbox::Entry.new(
+      id: "id:file-2",
+      name: "PageTwo.pdf",
+      path: "/PageTwo.pdf",
+      tag: "file",
+      size: 9
+    )
     client = Object.new
-    client.define_singleton_method(:list) do |path: "", **|
+    client.define_singleton_method(:list) do |path: "", cursor: nil, **|
+      if cursor == "page-2"
+        next RecordingStudioDropbox::Page.new(entries: [page_two_file], next_cursor: nil)
+      end
+
       entries = path.to_s == "/Briefs" ? [nested_file] : [dropbox_folder, dropbox_file]
-      RecordingStudioDropbox::Page.new(entries: entries, next_cursor: nil)
+      next_cursor = path.to_s == "/Briefs" ? nil : "page-2"
+      RecordingStudioDropbox::Page.new(entries: entries, next_cursor: next_cursor)
+    end
+    client.define_singleton_method(:search) do |query:, cursor: nil, **|
+      _ = cursor
+      matches = [dropbox_file, nested_file, page_two_file].select { |file| file.name.include?(query.to_s) }
+      RecordingStudioDropbox::Page.new(entries: matches, next_cursor: nil)
     end
     client
   end
 
   def import_client
-    dropbox_file = RecordingStudioDropbox::Entry.new(
-      id: "id:file-1",
-      name: "Brief.pdf",
-      path: "/Brief.pdf",
-      tag: "file",
-      size: 12
-    )
-    downloaded = RecordingStudioDropbox::DownloadedFile.new(
-      body: "%PDF-1.4\nbrief",
-      filename: "Brief.pdf",
-      content_type: nil
-    )
+    files = {
+      "id:file-1" => RecordingStudioDropbox::Entry.new(
+        id: "id:file-1",
+        name: "Brief.pdf",
+        path: "/Brief.pdf",
+        tag: "file",
+        size: 12
+      ),
+      "/Brief.pdf" => RecordingStudioDropbox::Entry.new(
+        id: "id:file-1",
+        name: "Brief.pdf",
+        path: "/Brief.pdf",
+        tag: "file",
+        size: 12
+      ),
+      "id:file-2" => RecordingStudioDropbox::Entry.new(
+        id: "id:file-2",
+        name: "PageTwo.pdf",
+        path: "/PageTwo.pdf",
+        tag: "file",
+        size: 9
+      )
+    }
+    downloads = {
+      "id:file-1" => RecordingStudioDropbox::DownloadedFile.new(
+        body: "%PDF-1.4\nbrief",
+        filename: "Brief.pdf",
+        content_type: nil
+      ),
+      "/Brief.pdf" => RecordingStudioDropbox::DownloadedFile.new(
+        body: "%PDF-1.4\nbrief",
+        filename: "Brief.pdf",
+        content_type: nil
+      ),
+      "id:file-2" => RecordingStudioDropbox::DownloadedFile.new(
+        body: "%PDF-1.4\npage-two",
+        filename: "PageTwo.pdf",
+        content_type: nil
+      )
+    }
     client = listing_client
-    client.define_singleton_method(:fetch_file) { |path:| dropbox_file }
-    client.define_singleton_method(:download) { |path:| downloaded }
+    client.define_singleton_method(:fetch_file) { |path:| files.fetch(path) }
+    client.define_singleton_method(:download) { |path:, **| downloads.fetch(path) }
     client
   end
 
@@ -302,11 +394,13 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     RecordingStudioOauth::Engine.routes.url_helpers.outbound_connect_path(provider: "dropbox")
   end
 
-  def dropbox_imports_path(path: nil)
+  def dropbox_imports_path(path: nil, query: nil, page_token: nil)
     url = "/recording_studio_attachable/dropbox/recordings/#{@root.id}/imports"
-    return url if path.blank?
+    params = { path: path, query: query, page_token: page_token }.compact
+    params.reject! { |_key, value| value.blank? }
+    return url if params.blank?
 
-    "#{url}?#{ { path: path }.to_query }"
+    "#{url}?#{params.to_query}"
   end
 
   def dropbox_connect_path

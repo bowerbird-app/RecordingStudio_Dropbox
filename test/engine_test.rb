@@ -46,6 +46,7 @@ class EngineTest < Minitest::Test
     refute_includes source, "config_for"
     refute_includes source, "RuntimeError"
     refute_includes source, "merge!"
+    assert_includes source, 'Gem::Version.new("0.21.0")'
   end
 
   def test_engine_does_not_apply_host_extensions

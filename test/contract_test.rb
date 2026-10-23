@@ -66,7 +66,7 @@ class ContractTest < Minitest::Test
     refute_includes client.instance_method(:search).parameters, %i[key path]
     refute_includes client.instance_method(:search).parameters, %i[keyreq path]
     assert_equal [%i[keyreq path]], client.instance_method(:fetch_file).parameters
-    assert_equal [%i[keyreq path]], client.instance_method(:download).parameters
+    assert_equal [%i[keyreq path], %i[key max_bytes]], client.instance_method(:download).parameters
     assert_equal(
       [%i[keyreq path], %i[keyreq io], %i[key chunk_size]],
       client.instance_method(:upload_file).parameters,

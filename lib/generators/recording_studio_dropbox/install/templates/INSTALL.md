@@ -9,3 +9,5 @@ RecordingStudioDropbox install complete.
    Attachable install plus migrations.
 5. Resolve tokens with RecordingStudioDropbox::OauthToken, then pass that to Client.
    Oauth registration uses files.metadata.read and files.content.read.
+   Override scopes with RecordingStudioDropbox.configuration.scopes if you
+   need files.content.write.

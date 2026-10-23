@@ -25,5 +25,13 @@ module RecordingStudioDropbox
 end
 
 ActiveSupport.on_load(:recording_studio_attachable) do
+  attached = Gem::Version.new(RecordingStudioAttachable::VERSION)
+  required = Gem::Version.new("0.21.0")
+  if attached < required
+    raise "RecordingStudioDropbox's Attachable add-on needs " \
+          "recording_studio_attachable 0.21.0 or newer " \
+          "(got #{RecordingStudioAttachable::VERSION})."
+  end
+
   require "recording_studio_dropbox/attachable"
 end

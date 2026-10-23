@@ -5,7 +5,7 @@ require "stringio"
 module RecordingStudioDropbox
   class Client
     SIMPLE_UPLOAD_MAX_BYTES = 8 * 1024 * 1024
-    SCOPES = %w[files.metadata.read files.content.read files.content.write].freeze
+    SCOPES = OauthProvider::SCOPES
     PREFIX_PATHS = %w[id: ns: rev:].freeze
 
     def initialize(token_provider:)
@@ -36,14 +36,14 @@ module RecordingStudioDropbox
       Entry.from_api(@transport.post_json("/2/files/get_metadata", { path: normalize_entry_path(path) }))
     end
 
-    def download(path:)
+    def download(path:, max_bytes: nil)
       normalized = normalize_entry_path(path)
-      response = @transport.post_content("/2/files/download", arg: { path: normalized })
-      DownloadedFile.new(
-        body: response.body.to_s,
-        filename: filename_from(download_result(response), normalized),
-        content_type: nil
+      response = @transport.post_content(
+        "/2/files/download",
+        arg: { path: normalized },
+        max_bytes: max_bytes
       )
+      downloaded_file(response, normalized)
     end
 
     def upload_file(path:, io:, chunk_size: SIMPLE_UPLOAD_MAX_BYTES)
@@ -72,6 +72,14 @@ module RecordingStudioDropbox
 
     def cursor_when_more(body)
       body["has_more"] == true ? body["cursor"] : nil
+    end
+
+    def downloaded_file(response, normalized)
+      DownloadedFile.new(
+        body: response.body.to_s,
+        filename: filename_from(download_result(response), normalized),
+        content_type: nil
+      )
     end
 
     def download_result(response)

@@ -3,9 +3,12 @@
 ENV["RAILS_ENV"] = "test"
 require_relative "../test_helper"
 require_relative "../dummy/config/environment"
+require_relative "../dummy/test/support/reset_seed_data"
 
 require "devise/test/integration_helpers"
 require "rails/test_help"
+
+ResetSeedData.call
 
 class DocsControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers

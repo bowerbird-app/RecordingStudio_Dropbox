@@ -3,6 +3,11 @@
 module RecordingStudioDropbox
   module Attachable
     module Registration
+      PROVIDER_KEY = :dropbox
+      PROVIDER_LABEL = "Dropbox"
+      LAUNCHER = "dropbox"
+      LAUNCHER_MODULE = "recording_studio_dropbox/dropbox_picker_launcher"
+
       module_function
 
       def provider_options
@@ -11,11 +16,11 @@ module RecordingStudioDropbox
 
       def identity
         {
-          label: Integration::PROVIDER_LABEL,
+          label: PROVIDER_LABEL,
           icon: "cloud",
           strategy: :client_picker,
-          launcher: Integration::LAUNCHER,
-          launcher_module: Integration::LAUNCHER_MODULE,
+          launcher: LAUNCHER,
+          launcher_module: LAUNCHER_MODULE,
           allowed_payload_keys: %w[id]
         }
       end
@@ -55,11 +60,11 @@ module RecordingStudioDropbox
       end
 
       def connect_payload(recording:, context:)
-        helpers = Integration.dropbox_helpers(context)
+        helpers = dropbox_helpers(context)
         return if helpers.blank?
 
         {
-          url: Integration.oauth_connect_path,
+          url: Oauth.oauth_connect_path,
           method: "post",
           fields: connect_fields(recording, context, helpers),
           fallback_url: helpers.recording_connect_path(recording, popup: 1)
@@ -76,7 +81,38 @@ module RecordingStudioDropbox
       end
 
       def reconnect_required?(error)
-        Integration.reconnect_required?(error)
+        error.is_a?(RecordingStudioDropbox::ReconnectRequired) || attachable_reconnect?(error)
+      end
+
+      def attachable_reconnect?(error)
+        defined?(RecordingStudioAttachable::ReconnectRequired) &&
+          error.is_a?(RecordingStudioAttachable::ReconnectRequired)
+      end
+
+      def request_error?(error)
+        error.is_a?(RecordingStudioDropbox::RequestError)
+      end
+
+      def client(root:, actor:)
+        token = RecordingStudioDropbox::OauthToken.new(root: root, actor: actor)
+        RecordingStudioDropbox::Client.new(token_provider: token)
+      end
+
+      def chooser_access(root:, actor:)
+        RecordingStudioDropbox::OauthToken.new(root: root, actor: actor).call
+      end
+
+      def dropbox_helpers(context)
+        return context.dropbox if context.respond_to?(:dropbox)
+        return context if context.respond_to?(:recording_connect_path)
+
+        nil
+      end
+
+      def root_for(recording)
+        return recording unless recording.respond_to?(:root_recording)
+
+        recording.root_recording || recording
       end
     end
   end

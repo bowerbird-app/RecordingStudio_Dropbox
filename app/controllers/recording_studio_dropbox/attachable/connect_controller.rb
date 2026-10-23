@@ -40,16 +40,15 @@ module RecordingStudioDropbox
       end
 
       def disconnect_path
-        Integration.oauth_disconnect_path(
-          Integration.connection_id_for(root: dropbox_root, actor: current_attachable_actor),
+        Oauth.oauth_disconnect_path(
+          Oauth.connection_id_for(root: dropbox_root, actor: current_attachable_actor),
           return_to: recording_imports_path(@recording, **upload_flow_params)
         )
       end
 
       def disconnect_failed_message
-        RecordingStudioAttachable::Copy.t(
-          "providers.disconnect_failed",
-          provider: provider_label,
+        I18n.t(
+          "recording_studio_dropbox.disconnect_failed",
           default: "#{provider_label} isn't connected."
         )
       end

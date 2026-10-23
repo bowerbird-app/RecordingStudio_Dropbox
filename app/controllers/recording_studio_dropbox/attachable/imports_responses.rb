@@ -47,8 +47,8 @@ module RecordingStudioDropbox
       end
 
       def imported_notice(result)
-        RecordingStudioAttachable::Copy.t(
-          "providers.imported_count",
+        I18n.t(
+          "recording_studio_dropbox.imported_count",
           count: result.value.size,
           default: "Imported #{result.value.size} files."
         )
@@ -62,8 +62,8 @@ module RecordingStudioDropbox
       end
 
       def handle_index_error(error)
-        return render_disconnected(reconnect: true) if Integration.reconnect_required?(error)
-        raise unless Integration.request_error?(error)
+        return render_disconnected(reconnect: true) if Registration.reconnect_required?(error)
+        raise unless Registration.request_error?(error)
 
         render_listing_error(error)
       end
@@ -77,8 +77,8 @@ module RecordingStudioDropbox
       end
 
       def handle_create_error(error)
-        return respond_to_reconnect_error if Integration.reconnect_required?(error)
-        raise unless Integration.request_error?(error)
+        return respond_to_reconnect_error if Registration.reconnect_required?(error)
+        raise unless Registration.request_error?(error)
 
         respond_to do |format|
           format.json { render json: { error: error.message }, status: :unprocessable_content }
@@ -94,9 +94,8 @@ module RecordingStudioDropbox
       end
 
       def reconnect_json_payload
-        message = RecordingStudioAttachable::Copy.t(
-          "providers.reconnect_to_continue",
-          provider: provider_label,
+        message = I18n.t(
+          "recording_studio_dropbox.reconnect_to_continue",
           default: "Reconnect #{provider_label} to continue"
         )
         provider_connect_payload(
