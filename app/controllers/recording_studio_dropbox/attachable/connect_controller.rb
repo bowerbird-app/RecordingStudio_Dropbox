@@ -33,20 +33,25 @@ module RecordingStudioDropbox
       private
 
       def redirect_after_disconnect
-        path = Integration.oauth_disconnect_path(
+        path = disconnect_path
+        return redirect_to path, status: :temporary_redirect if path.present?
+
+        redirect_to recording_imports_path(@recording, **upload_flow_params), alert: disconnect_failed_message
+      end
+
+      def disconnect_path
+        Integration.oauth_disconnect_path(
           Integration.connection_id_for(root: dropbox_root, actor: current_attachable_actor),
           return_to: recording_imports_path(@recording, **upload_flow_params)
         )
-        if path.present?
-          redirect_to path, status: :temporary_redirect
-        else
-          redirect_to recording_imports_path(@recording, **upload_flow_params),
-                      alert: RecordingStudioAttachable::Copy.t(
-                        "providers.disconnect_failed",
-                        provider: provider_label,
-                        default: "#{provider_label} isn't connected."
-                      )
-        end
+      end
+
+      def disconnect_failed_message
+        RecordingStudioAttachable::Copy.t(
+          "providers.disconnect_failed",
+          provider: provider_label,
+          default: "#{provider_label} isn't connected."
+        )
       end
     end
   end

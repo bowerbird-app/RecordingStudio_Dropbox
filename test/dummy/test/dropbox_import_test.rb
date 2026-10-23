@@ -175,7 +175,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     end
 
     with_dropbox_client(client) do
-      post recording_studio_attachable.recording_attachment_imports_path(@root),
+      post "/recording_studio_attachable/recordings/#{@root.id}/attachments/imports",
            params: {
              attachment_import: {
                provider_key: "dropbox",

@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
-require "marcel"
-
 module RecordingStudioDropbox
   module Attachable
     class ImportsController < ApplicationController
-      include ImportsSupport
+      include ImportsListing
+      include ImportsResponses
 
       def index
         authorize_provider_upload!

@@ -44,9 +44,6 @@ begin
   grant_workspace_admin = lambda do |recording, actor|
     next unless defined?(RecordingStudioAccessible)
 
-    existing = RecordingStudioAccessible::Access.find_by(recording: recording, actor: actor)
-    next if existing
-
     original = RecordingStudioAccessible.configuration.access_management_authorizer
     RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
     result = RecordingStudioAccessible.grant_access(

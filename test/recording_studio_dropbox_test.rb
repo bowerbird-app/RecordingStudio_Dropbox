@@ -21,6 +21,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     attachable = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable.rb", __dir__))
     engine = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
     integration = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable/integration.rb", __dir__))
+    registration = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable/registration.rb", __dir__))
     bootstrap = File.read(
       File.expand_path("../app/controllers/recording_studio_dropbox/attachable/bootstrap_controller.rb", __dir__)
     )
@@ -32,10 +33,11 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes attachable, "register_adapter_routes(:dropbox)"
     assert_includes attachable, 'mount RecordingStudioDropbox::Attachable::Engine, at: "/dropbox", as: :dropbox'
     assert_includes integration, "register_upload_provider"
-    assert_includes integration, "reconnect_error:"
-    assert_includes integration, "connect:"
+    assert_includes registration, "reconnect_error:"
+    assert_includes registration, "connect:"
     refute_includes integration, "Adapter::ClientPicker"
     refute_includes integration, "register_adapter_configuration"
+    refute_includes registration, "Adapter::ClientPicker"
     assert_includes bootstrap, "provider_connect_payload"
     assert_includes launcher, 'from "recording_studio_attachable/provider_launchers"'
   end
@@ -267,8 +269,6 @@ class RecordingStudioDropboxTest < Minitest::Test
       "Page",
       "RecordingStudioSiteSettings::SiteSetting",
       "RecordingStudioAttachable::Attachment",
-      "RecordingStudioAttachable::Library",
-      "RecordingStudioAttachable::Placement",
       "RecordingStudio::Access",
       "RecordingStudioApi::AdminApi",
       "RecordingStudioApi::ApiAccessToken",

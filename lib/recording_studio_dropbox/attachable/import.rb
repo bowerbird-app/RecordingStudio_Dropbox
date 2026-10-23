@@ -10,15 +10,7 @@ module RecordingStudioDropbox
 
       def remote_files(parent_recording:, attachments:, actor: nil, impersonator: nil)
         selections = selections_from(attachments)
-        if selections.blank?
-          return RecordingStudioAttachable::Services::BaseService::Result.new(
-            success: false,
-            error: RecordingStudioAttachable::Copy.t(
-              "providers.select_at_least_one",
-              default: "Select at least one file"
-            )
-          )
-        end
+        return empty_selection_result if selections.blank?
 
         RecordingStudioAttachable::Services::ImportRemoteFiles.call(
           parent_recording: parent_recording,
@@ -29,19 +21,39 @@ module RecordingStudioDropbox
         )
       end
 
+      def empty_selection_result
+        RecordingStudioAttachable::Services::BaseService::Result.new(
+          success: false,
+          error: RecordingStudioAttachable::Copy.t(
+            "providers.select_at_least_one",
+            default: "Select at least one file"
+          )
+        )
+      end
+
       def selections_from(attachments)
-        Array(attachments).filter_map { |item| selection_from(item) }.uniq { |selection| selection.fetch("id") }
+        Array(attachments).filter_map { |item| selection_from(item) }.uniq { |row| row.fetch("id") }
       end
 
       def selection_from(item)
         return string_selection(item) if item.is_a?(String)
-        return unless item.respond_to?(:to_h)
 
-        hash = item.to_h
+        hash = stringify_hash(item)
+        return if hash.blank?
+
+        payload = stringify_hash(hash["provider_payload"]) || hash
+        build_selection(hash, payload)
+      end
+
+      def stringify_hash(value)
+        return unless value.respond_to?(:to_h)
+
+        hash = value.to_h
         hash = hash.to_unsafe_h if hash.respond_to?(:to_unsafe_h)
-        hash = hash.deep_stringify_keys
-        payload = hash["provider_payload"] || hash
-        payload = payload.to_unsafe_h.deep_stringify_keys if payload.respond_to?(:to_unsafe_h)
+        hash.deep_stringify_keys
+      end
+
+      def build_selection(hash, payload)
         id = payload["id"]
         return if id.blank?
 

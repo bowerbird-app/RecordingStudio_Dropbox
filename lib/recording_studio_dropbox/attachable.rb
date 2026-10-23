@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "recording_studio_dropbox/attachable/engine"
+require "recording_studio_dropbox/attachable/oauth"
+require "recording_studio_dropbox/attachable/registration"
 require "recording_studio_dropbox/attachable/integration"
 require "recording_studio_dropbox/attachable/import"
 
