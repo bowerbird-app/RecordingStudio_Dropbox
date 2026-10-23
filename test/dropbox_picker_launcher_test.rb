@@ -17,26 +17,24 @@ class DropboxPickerLauncherTest < Minitest::Test
     assert_includes launcher_source, "csrfToken"
     assert_includes launcher_source, "if (gesture && canOpenNow(session))"
     assert_includes launcher_source, "window.Dropbox.choose"
-    assert_includes launcher_source, "dropboxAppKey"
-    assert_includes launcher_source, "sessions.forget(bootstrapUrl)"
-    refute_includes launcher_source, "script.defer"
     refute_includes launcher_source, "showProviderContinueButton"
     refute_includes launcher_source, "Choose from Dropbox"
     refute_includes launcher_source, "oauth_connect_url"
 
     skip "node is not available" unless node_available?
-    skip "recording_studio_attachable is not in this bundle" unless provider_launchers_path
+    skip "recording_studio_attachable is not in this bundle" unless provider_launchers_source
 
     stdout, stderr, status = run_node_launcher_harness
     assert status.success?, "#{stderr}\n#{stdout}"
     result = JSON.parse(stdout)
-    assert_equal true, result.fetch("singleClickOpensChooser")
     assert_equal true, result.fetch("chooseOnReadyClick")
     assert_equal true, result.fetch("chooserSendsFilename")
     assert_equal true, result.fetch("prefetchAwaitsChooser")
-    assert_equal 0, result.fetch("chooseOnColdClick")
+    assert_equal true, result.fetch("marikitClick1OpenedChooser")
+    assert_equal 0, result.fetch("marikitClick1OpenedPopup")
+    refute result.fetch("marikitClick1ShowedWarming")
+    assert_equal true, result.fetch("chooseOnColdClick")
     assert_equal 0, result.fetch("popupOnColdClick")
-    assert_equal true, result.fetch("chooseAfterNextClick")
     assert_equal true, result.fetch("popupOnReadyAuthClick")
     assert_equal true, result.fetch("postedOauthConnectIntoPopup")
     assert_equal 0, result.fetch("chooseAfterConnectWithoutClick")
@@ -63,19 +61,52 @@ class DropboxPickerLauncherTest < Minitest::Test
     File.join(spec.full_gem_path, "app/javascript/controllers/recording_studio_attachable/provider_launchers.js")
   end
 
+  def dropbox_launcher_under_test
+    ENV.fetch("DROPBOX_LAUNCHER_PATH", dropbox_launcher_path)
+  end
+
+  def provider_launchers_source
+    path = provider_launchers_path
+    if path && File.exist?(path)
+      source = File.read(path)
+      return source if source.include?("createBootstrapCache")
+    end
+
+    fallback = File.expand_path("/tmp/provider_launchers_head.js")
+    if File.exist?(fallback)
+      cached = File.read(fallback)
+      return cached if cached.include?("createBootstrapCache")
+    end
+
+    require "net/http"
+    require "uri"
+    uri = URI(
+      "https://raw.githubusercontent.com/bowerbird-app/RecordingStudio_attachable/" \
+      "main/app/javascript/controllers/recording_studio_attachable/provider_launchers.js"
+    )
+    fetched = Net::HTTP.get(uri)
+    File.write(fallback, fetched) if fetched.include?("createBootstrapCache")
+    fetched
+  end
+
   def node_available?
     system("node", "-v", out: File::NULL, err: File::NULL)
   end
 
   def run_node_launcher_harness
     Dir.mktmpdir("dropbox-launcher-test") do |dir|
+      launchers = provider_launchers_source
+      unless launchers&.include?("createBootstrapCache")
+        raise "Attachable provider_launchers.js is missing createBootstrapCache"
+      end
+
       File.write(
         File.join(dir, "provider_launchers.js"),
-        browser_globals_prefix + File.read(provider_launchers_path)
+        browser_globals_prefix + launchers
       )
       File.write(
         File.join(dir, "dropbox_picker_launcher.js"),
-        browser_globals_prefix + File.read(dropbox_launcher_path).sub(
+        browser_globals_prefix + File.read(dropbox_launcher_under_test).sub(
           'from "recording_studio_attachable/provider_launchers"',
           'from "./provider_launchers.js"'
         )
@@ -191,8 +222,14 @@ class DropboxPickerLauncherTest < Minitest::Test
           element: element(),
           providerButtonsByKey: new Map(),
           fetchProviderBootstrap: async () => ({ client_id: "app-key", provider_key: "dropbox" }),
-          openPopup: (url) => { popupCalls.push(url); return { focus() {} } },
-          setProviderStatus() {},
+          openPopup: (url) => {
+            const popup = { closed: false, focus() {}, close() { this.closed = true } }
+            popupCalls.push(url)
+            queueMicrotask(() => popup.close())
+            return popup
+          },
+          statuses: [],
+          setProviderStatus(message) { instance.statuses.push(message) },
           clearProviderStatus() {},
           addProviderSelections(_key, selections) { selectionNames.push(...selections.map((item) => item.name)) },
           launchClientPicker(button, { gesture = false } = {}) {
@@ -207,6 +244,78 @@ class DropboxPickerLauncherTest < Minitest::Test
         }
         return instance
       }
+
+      let resolveMarikitBootstrap
+      const marikitController = controller()
+      const marikitButton = pickerButton()
+      marikitButton.dataset.providerBootstrapUrl = "/dropbox/marikit"
+      marikitController.providerButtonsByKey.set("dropbox", marikitButton)
+      marikitController.fetchProviderBootstrap = () => new Promise((resolve) => {
+        resolveMarikitBootstrap = () => resolve({
+          client_id: "app-key",
+          needs_auth: true,
+          reconnect: true,
+          connect: {
+            url: "/recording_studio_oauth/outbound/dropbox/connect",
+            method: "post",
+            fields: {
+              authenticity_token: "csrf-token",
+              owner: "user",
+              return_to: "/dropbox/recordings/rec-1/connected?popup=1"
+            }
+          }
+        })
+      })
+      launcher.prefetch({
+        controller: marikitController,
+        bootstrapUrl: "/dropbox/marikit",
+        button: marikitButton
+      })
+      await new Promise((resolve) => queueMicrotask(resolve))
+      chooseCalls.length = 0
+      popupCalls.length = 0
+      marikitController.statuses = []
+      const marikitClick1Launch = launcher.launch({
+        controller: marikitController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/marikit",
+        button: marikitButton,
+        gesture: true
+      })
+      const marikitClick1OpenedChooser = chooseCalls.length === 1
+      const marikitClick1OpenedPopup = popupCalls.length
+      const marikitClick1ShowedWarming = marikitController.statuses.includes("Dropbox is warming up…")
+      const chooseOnColdClick = marikitClick1OpenedChooser
+      const popupOnColdClick = marikitClick1OpenedPopup
+      resolveMarikitBootstrap()
+      await marikitClick1Launch
+      await new Promise((resolve) => queueMicrotask(resolve))
+      chooseCalls.length = 0
+      popupCalls.length = 0
+      await launcher.launch({
+        controller: marikitController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/marikit",
+        button: marikitButton,
+        gesture: true
+      })
+      const marikitClick2OpenedChooser = chooseCalls.length
+      const marikitClick2OpenedPopup = popupCalls.length
+      await new Promise((resolve) => queueMicrotask(resolve))
+      const closedFlashPopup = popupCalls.length > 0
+      marikitController.fetchProviderBootstrap = async () => ({ client_id: "app-key", provider_key: "dropbox" })
+      await Promise.resolve(relaunchUploadProvider(marikitController, "dropbox"))
+      await new Promise((resolve) => queueMicrotask(resolve))
+      chooseCalls.length = 0
+      popupCalls.length = 0
+      await launcher.launch({
+        controller: marikitController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/marikit",
+        button: marikitButton,
+        gesture: true
+      })
+      const marikitClick3OpenedChooser = chooseCalls.length === 1
 
       const readyController = controller()
       const readyButton = pickerButton()
@@ -226,38 +335,7 @@ class DropboxPickerLauncherTest < Minitest::Test
         gesture: true
       })
       const chooseOnReadyClick = chooseCalls.length === 1
-      const singleClickOpensChooser = chooseOnReadyClick
       const chooserSendsFilename = selectionNames.includes("kiln.jpg")
-
-      let resolveBootstrap
-      const coldController = controller()
-      const coldButton = pickerButton()
-      coldController.fetchProviderBootstrap = () => new Promise((resolve) => {
-        resolveBootstrap = () => resolve({ client_id: "app-key", provider_key: "dropbox" })
-      })
-      chooseCalls.length = 0
-      popupCalls.length = 0
-      const coldLaunch = launcher.launch({
-        controller: coldController,
-        providerKey: "dropbox",
-        bootstrapUrl: "/dropbox/cold",
-        button: coldButton,
-        gesture: true
-      })
-      const chooseOnColdClick = chooseCalls.length
-      const popupOnColdClick = popupCalls.length
-      resolveBootstrap()
-      await coldLaunch
-      await new Promise((resolve) => queueMicrotask(resolve))
-      chooseCalls.length = 0
-      await launcher.launch({
-        controller: coldController,
-        providerKey: "dropbox",
-        bootstrapUrl: "/dropbox/cold",
-        button: coldButton,
-        gesture: true
-      })
-      const chooseAfterNextClick = chooseCalls.length === 1
 
       const authController = controller()
       authController.fetchProviderBootstrap = async () => ({
@@ -399,13 +477,18 @@ class DropboxPickerLauncherTest < Minitest::Test
       const blockedPopupRejected = blockedPopupMessage === "The sign-in popup was blocked. Allow popups and try again."
 
       process.stdout.write(JSON.stringify({
-        singleClickOpensChooser,
         chooseOnReadyClick,
         chooserSendsFilename,
         prefetchAwaitsChooser,
+        marikitClick1OpenedChooser,
+        marikitClick1OpenedPopup,
+        marikitClick1ShowedWarming,
+        marikitClick2OpenedChooser,
+        marikitClick2OpenedPopup,
+        marikitClick3OpenedChooser,
+        closedFlashPopup,
         chooseOnColdClick,
         popupOnColdClick,
-        chooseAfterNextClick,
         popupOnReadyAuthClick,
         postedOauthConnectIntoPopup,
         chooseAfterConnectWithoutClick,

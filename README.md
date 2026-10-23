@@ -90,7 +90,7 @@ end
 
 `enabled` and `client_id` are this gem's settings. `client_id` is the Dropbox app key for Chooser. Dummy values such as `dummy-dropbox-client-id` are ignored. Routes stay at `/recording_studio_attachable/dropbox`.
 
-Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` only from a user click. The file-list page uses Attachable's `providers/_remote_file_browser` for files and folders. Bootstrap `needs_auth` is the auth signal; `connect` is always the connect recipe.
+Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` from the first user click after the upload page loads. The file-list page uses Attachable's `providers/_remote_file_browser` for files and folders. Bootstrap `needs_auth` is the auth signal; `connect` is always the connect recipe.
 
 ## Errors
 

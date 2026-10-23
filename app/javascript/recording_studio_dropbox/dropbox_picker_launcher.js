@@ -22,6 +22,7 @@ function ensureChooserScript(appKey) {
     script.src = CHOOSER_SRC
     script.id = "dropboxjs"
     script.async = true
+    script.defer = true
     if (appKey) script.setAttribute("data-app-key", appKey)
     document.head.appendChild(script)
   } else if (appKey && !script.getAttribute("data-app-key")) {
@@ -30,7 +31,6 @@ function ensureChooserScript(appKey) {
 }
 
 function ensureDropboxChooserLoaded(appKey) {
-  if (appKey) ensureChooserScript(appKey)
   if (!chooserPromise) {
     ensureChooserScript(appKey)
     chooserPromise = loadScript(CHOOSER_SRC).then(() => {
@@ -38,15 +38,15 @@ function ensureDropboxChooserLoaded(appKey) {
         throw new Error("Dropbox Chooser did not load.")
       }
     })
+  } else if (appKey) {
+    ensureChooserScript(appKey)
   }
 
   return chooserPromise
 }
 
 function prefetchChooser(button) {
-  const appKey = chooserAppKeyFrom(button) || chooserAppKeyFrom(
-    document.querySelector("[data-provider-launcher='dropbox']")
-  )
+  const appKey = chooserAppKeyFrom(button)
   if (appKey) ensureDropboxChooserLoaded(appKey)
 }
 
@@ -93,6 +93,13 @@ function canOpenNow(session) {
   return Boolean(window.Dropbox?.choose)
 }
 
+function chooserReadyDuringWarmup(session) {
+  if (!window.Dropbox?.choose) return false
+  if (!session?.ready || session.error || !session.bootstrap) return true
+
+  return !providerNeedsAuth(session.bootstrap)
+}
+
 async function applySelections(controller, providerKey, selections) {
   if (selections.length === 0) {
     controller.clearProviderStatus()
@@ -119,11 +126,11 @@ function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
   return openChooserNow(controller, providerKey)
 }
 
-function waitForSession(controller, session, bootstrapUrl, button, announce) {
-  if (announce) controller.setProviderStatus("Dropbox is warming up…")
+function waitForSession(controller, session, bootstrapUrl, button) {
+  controller.setProviderStatus("Dropbox is warming up…")
 
   return session.promise.then(() => {
-    if (announce) controller.clearProviderStatus()
+    controller.clearProviderStatus()
     if (session.error) throw session.error
     return null
   }).catch((error) => {
@@ -132,8 +139,6 @@ function waitForSession(controller, session, bootstrapUrl, button, announce) {
     throw error
   })
 }
-
-prefetchChooser()
 
 registerUploadProviderLauncher("dropbox", {
   forget(bootstrapUrl) {
@@ -153,10 +158,13 @@ registerUploadProviderLauncher("dropbox", {
   launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
     prefetchChooser(button)
     const session = startSession(controller, bootstrapUrl)
+    if (gesture && chooserReadyDuringWarmup(session)) {
+      return openChooserNow(controller, providerKey)
+    }
     if (gesture && canOpenNow(session)) {
       return openWithGesture(controller, providerKey, session.bootstrap, bootstrapUrl)
     }
 
-    return waitForSession(controller, session, bootstrapUrl, button, gesture)
+    return waitForSession(controller, session, bootstrapUrl, button)
   }
 })
