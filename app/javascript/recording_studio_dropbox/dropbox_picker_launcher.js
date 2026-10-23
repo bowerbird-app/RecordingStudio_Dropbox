@@ -1,21 +1,15 @@
 import {
   createBootstrapCache,
   csrfToken,
-  hideProviderContinueButton,
   loadScript,
   openProviderAuth,
   providerNeedsAuth,
-  registerUploadProviderLauncher,
-  showProviderContinueButton
+  registerUploadProviderLauncher
 } from "recording_studio_attachable/provider_launchers"
 
 const CHOOSER_SRC = "https://www.dropbox.com/static/api/2/dropins.js"
 const sessions = createBootstrapCache()
 let chooserPromise
-
-function chooserAppKeyFrom(button) {
-  return button?.dataset?.dropboxAppKey
-}
 
 function ensureChooserScript(appKey) {
   let script = document.querySelector(`script[src='${CHOOSER_SRC}']`)
@@ -25,14 +19,14 @@ function ensureChooserScript(appKey) {
     script.id = "dropboxjs"
     script.async = true
     script.defer = true
-    if (appKey) script.setAttribute("data-app-key", appKey)
+    script.setAttribute("data-app-key", appKey)
     document.head.appendChild(script)
   } else if (appKey && !script.getAttribute("data-app-key")) {
     script.setAttribute("data-app-key", appKey)
   }
 }
 
-function ensureDropboxChooserLoaded(appKey) {
+async function ensureDropboxChooserLoaded(appKey) {
   if (!chooserPromise) {
     ensureChooserScript(appKey)
     chooserPromise = loadScript(CHOOSER_SRC).then(() => {
@@ -40,16 +34,9 @@ function ensureDropboxChooserLoaded(appKey) {
         throw new Error("Dropbox Chooser did not load.")
       }
     })
-  } else if (appKey) {
-    ensureChooserScript(appKey)
   }
 
   return chooserPromise
-}
-
-function prefetchChooser(button) {
-  const appKey = chooserAppKeyFrom(button)
-  if (appKey) ensureDropboxChooserLoaded(appKey)
 }
 
 function openChooser() {
@@ -107,12 +94,11 @@ async function applySelections(controller, providerKey, selections) {
 }
 
 function openChooserNow(controller, providerKey) {
-  hideProviderContinueButton(controller)
   controller.setProviderStatus("Opening Dropbox…")
   return openChooser().then((selections) => applySelections(controller, providerKey, selections))
 }
 
-function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
+function openWithGesture(controller, providerKey, bootstrap) {
   if (providerNeedsAuth(bootstrap)) {
     csrfToken(controller, bootstrap)
     openProviderAuth(controller, bootstrap, providerKey)
@@ -120,28 +106,6 @@ function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
   }
 
   return openChooserNow(controller, providerKey)
-}
-
-function waitForSession(controller, session, bootstrapUrl, button) {
-  controller.setProviderStatus("Dropbox is warming up…")
-
-  return session.promise.then(() => {
-    controller.clearProviderStatus()
-    if (session.error) throw session.error
-    return null
-  }).catch((error) => {
-    sessions.forget(bootstrapUrl)
-    controller.handleProviderBootstrapError?.(error, button)
-    throw error
-  })
-}
-
-function continueAfterAuth(controller, providerKey, bootstrapUrl, button, session) {
-  if (providerNeedsAuth(session.bootstrap)) return
-
-  showProviderContinueButton(controller, button, "Open Dropbox", () => {
-    openChooserNow(controller, providerKey)
-  })
 }
 
 registerUploadProviderLauncher("dropbox", {
@@ -152,31 +116,27 @@ registerUploadProviderLauncher("dropbox", {
   prefetch({ controller, bootstrapUrl, button }) {
     if (!controller || !bootstrapUrl) return Promise.resolve()
 
-    prefetchChooser(button)
     return startSession(controller, bootstrapUrl).promise.catch((error) => {
       sessions.forget(bootstrapUrl)
       controller.handleProviderBootstrapError?.(error, button, { announce: false })
     })
   },
 
-  launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
-    prefetchChooser(button)
-    hideProviderContinueButton(controller)
+  async launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
     const session = startSession(controller, bootstrapUrl)
     if (gesture && canOpenNow(session)) {
-      return openWithGesture(controller, providerKey, session.bootstrap, bootstrapUrl)
-    }
-    if (gesture) {
-      return waitForSession(controller, session, bootstrapUrl, button)
+      return openWithGesture(controller, providerKey, session.bootstrap)
     }
 
-    return session.promise.then(() => {
-      if (session.error) throw session.error
-      continueAfterAuth(controller, providerKey, bootstrapUrl, button, session)
-    }).catch((error) => {
+    controller.setProviderStatus("Dropbox is warming up…")
+    try {
+      await session.promise
+    } catch (error) {
       sessions.forget(bootstrapUrl)
       controller.handleProviderBootstrapError?.(error, button)
       throw error
-    })
+    }
+    if (session.error) throw session.error
+    controller.clearProviderStatus()
   }
 })

@@ -38,7 +38,6 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes attachable_engine, "register_upload_provider"
     assert_includes registration, "reconnect_error:"
     assert_includes registration, "connect:"
-    assert_includes registration, "dropbox_app_key"
     refute_includes registration, "Adapter::ClientPicker"
     refute_includes registration, "Adapter::Configurable"
     assert_includes registration, "context:"

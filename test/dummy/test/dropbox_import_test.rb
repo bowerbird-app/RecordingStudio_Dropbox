@@ -267,9 +267,6 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "Dropbox"
-    assert_includes response.body, "data-dropbox-app-key"
-    assert_includes response.body, "test-dropbox-app-key"
-    assert_includes response.body, "recording_studio_dropbox/dropbox_picker_launcher"
   end
 
   private

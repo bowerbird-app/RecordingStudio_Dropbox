@@ -21,8 +21,7 @@ module RecordingStudioDropbox
           strategy: :client_picker,
           launcher: LAUNCHER,
           launcher_module: LAUNCHER_MODULE,
-          allowed_payload_keys: %w[id],
-          data: { dropbox_app_key: RecordingStudioDropbox.configuration.client_id }.compact
+          allowed_payload_keys: %w[id]
         }
       end
 
