@@ -144,7 +144,7 @@ class AttachableIntegrationTest < Minitest::Test
     status = RecordingStudioOauth.stub(:connection_for, live) do
       RecordingStudioOauth.stub(
         :connection_status,
-        ->(**kwargs) {
+        lambda { |**kwargs|
           seen = kwargs
           :needs_reconnect
         }
