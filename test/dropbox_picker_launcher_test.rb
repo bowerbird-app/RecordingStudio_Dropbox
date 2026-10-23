@@ -1,0 +1,380 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "json"
+require "open3"
+require "tmpdir"
+
+class DropboxPickerLauncherTest < Minitest::Test
+  def test_dropbox_launcher_prefetches_and_chooses_inside_a_click
+    launcher_source = File.read(dropbox_launcher_path)
+
+    assert_includes launcher_source, 'from "recording_studio_attachable/provider_launchers"'
+    assert_includes launcher_source, "loadScript"
+    assert_includes launcher_source, "createBootstrapCache"
+    assert_includes launcher_source, "providerNeedsAuth"
+    assert_includes launcher_source, "openProviderAuth"
+    assert_includes launcher_source, "csrfToken"
+    assert_includes launcher_source, "if (gesture && canOpenNow(session))"
+    assert_includes launcher_source, "window.Dropbox.choose"
+    refute_includes launcher_source, "showProviderContinueButton"
+    refute_includes launcher_source, "Choose from Dropbox"
+    refute_includes launcher_source, "oauth_connect_url"
+
+    skip "node is not available" unless node_available?
+    skip "recording_studio_attachable is not in this bundle" unless provider_launchers_path
+
+    stdout, stderr, status = run_node_launcher_harness
+    assert status.success?, "#{stderr}\n#{stdout}"
+    result = JSON.parse(stdout)
+    assert_equal true, result.fetch("chooseOnReadyClick")
+    assert_equal true, result.fetch("chooserSendsFilename")
+    assert_equal 0, result.fetch("chooseOnColdClick")
+    assert_equal true, result.fetch("chooseAfterNextClick")
+    assert_equal true, result.fetch("popupOnReadyAuthClick")
+    assert_equal true, result.fetch("postedOauthConnectIntoPopup")
+    assert_equal 0, result.fetch("chooseAfterConnectWithoutClick")
+    assert_equal true, result.fetch("chooseAfterConnectOnSamePage")
+    assert_equal 0, result.fetch("popupAfterConnectOnSamePage")
+    assert_equal 2, result.fetch("bootstrapsAfterRelaunch")
+    assert_equal true, result.fetch("forbiddenPrefetchHandled")
+    assert_equal true, result.fetch("forbiddenButtonDisabled")
+    assert_equal false, result.fetch("forbiddenPrefetchAnnounced")
+    assert_equal 0, result.fetch("unhandledRejections")
+    assert_equal true, result.fetch("blockedPopupRejected")
+  end
+
+  private
+
+  def dropbox_launcher_path
+    File.expand_path("../app/javascript/recording_studio_dropbox/dropbox_picker_launcher.js", __dir__)
+  end
+
+  def provider_launchers_path
+    spec = Gem.loaded_specs["recording_studio_attachable"]
+    return unless spec
+
+    File.join(spec.full_gem_path, "app/javascript/controllers/recording_studio_attachable/provider_launchers.js")
+  end
+
+  def node_available?
+    system("node", "-v", out: File::NULL, err: File::NULL)
+  end
+
+  def run_node_launcher_harness
+    Dir.mktmpdir("dropbox-launcher-test") do |dir|
+      File.write(
+        File.join(dir, "provider_launchers.js"),
+        browser_globals_prefix + File.read(provider_launchers_path)
+      )
+      File.write(
+        File.join(dir, "dropbox_picker_launcher.js"),
+        browser_globals_prefix + File.read(dropbox_launcher_path).sub(
+          'from "recording_studio_attachable/provider_launchers"',
+          'from "./provider_launchers.js"'
+        )
+      )
+      File.write(File.join(dir, "harness.mjs"), node_harness_source)
+      Open3.capture3("node", File.join(dir, "harness.mjs"))
+    end
+  end
+
+  def browser_globals_prefix
+    "const window = globalThis;\nconst document = globalThis.document;\n"
+  end
+
+  def node_harness_source
+    <<~JS
+      const chooseCalls = []
+      const popupCalls = []
+      const formPosts = []
+      const selectionNames = []
+
+      function element(tag = "div") {
+        return {
+          tagName: tag.toUpperCase(),
+          dataset: {},
+          className: "",
+          textContent: "",
+          children: [],
+          attributes: {},
+          disabled: false,
+          setAttribute(name, value) { this.attributes[name] = value },
+          querySelector() { return null },
+          appendChild(child) { this.children.push(child); return child },
+          replaceChildren(...nodes) { this.children = nodes }
+        }
+      }
+
+      const head = {
+        appendChild(script) {
+          queueMicrotask(() => {
+            script.dataset.loaded = "true"
+            globalThis.window.Dropbox = {
+              choose(options) {
+                chooseCalls.push(options)
+                options.success([{ id: "id:fia-1", name: "kiln.jpg" }])
+              }
+            }
+            script._load?.()
+          })
+          return script
+        }
+      }
+
+      globalThis.document = {
+        querySelector() { return null },
+        createElement(tag) {
+          const node = element(tag)
+          node.type = ""
+          node.name = ""
+          node.value = ""
+          node.method = ""
+          node.action = ""
+          node.target = ""
+          node.submit = function() {
+            const fields = {}
+            this.children.forEach((child) => {
+              if (child.name) fields[child.name] = child.value
+            })
+            formPosts.push({ action: this.action, method: this.method, target: this.target, fields })
+          }
+          node.remove = function() {}
+          node.addEventListener = (type, fn) => {
+            if (type === "load") node._load = fn
+            if (type === "error") node._error = fn
+          }
+          return node
+        },
+        head,
+        body: { appendChild(child) { return child } }
+      }
+      globalThis.window = globalThis
+
+      const { getUploadProviderLauncher, relaunchUploadProvider } = await import("./provider_launchers.js")
+      await import("./dropbox_picker_launcher.js")
+      const launcher = getUploadProviderLauncher("dropbox")
+
+      function controller() {
+        const instance = {
+          element: element(),
+          providerButtonsByKey: new Map(),
+          fetchProviderBootstrap: async () => ({ client_id: "app-key", provider_key: "dropbox" }),
+          openPopup: (url) => { popupCalls.push(url); return { focus() {} } },
+          setProviderStatus() {},
+          clearProviderStatus() {},
+          addProviderSelections(_key, selections) { selectionNames.push(...selections.map((item) => item.name)) },
+          launchClientPicker(button, { gesture = false } = {}) {
+            return launcher.launch({
+              controller: instance,
+              providerKey: button.dataset.providerKey,
+              bootstrapUrl: button.dataset.providerBootstrapUrl,
+              button,
+              gesture
+            })
+          }
+        }
+        return instance
+      }
+
+      const readyController = controller()
+      await launcher.prefetch({ controller: readyController, bootstrapUrl: "/dropbox/ready" })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      chooseCalls.length = 0
+      await launcher.launch({
+        controller: readyController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/ready",
+        gesture: true
+      })
+      const chooseOnReadyClick = chooseCalls.length === 1
+      const chooserSendsFilename = selectionNames.includes("kiln.jpg")
+
+      let resolveBootstrap
+      const coldController = controller()
+      coldController.fetchProviderBootstrap = () => new Promise((resolve) => {
+        resolveBootstrap = () => resolve({ client_id: "app-key", provider_key: "dropbox" })
+      })
+      chooseCalls.length = 0
+      const coldLaunch = launcher.launch({
+        controller: coldController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/cold",
+        button: element("button"),
+        gesture: true
+      })
+      const chooseOnColdClick = chooseCalls.length
+      resolveBootstrap()
+      await coldLaunch
+      await new Promise((resolve) => queueMicrotask(resolve))
+      chooseCalls.length = 0
+      await launcher.launch({
+        controller: coldController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/cold",
+        button: element("button"),
+        gesture: true
+      })
+      const chooseAfterNextClick = chooseCalls.length === 1
+
+      const authController = controller()
+      authController.fetchProviderBootstrap = async () => ({
+        client_id: "app-key",
+        needs_auth: true,
+        connect: {
+          url: "/recording_studio_oauth/outbound/dropbox/connect",
+          method: "post",
+          fields: {
+            authenticity_token: "csrf-token",
+            owner: "user",
+            return_to: "/dropbox/recordings/rec-1/connected?popup=1"
+          }
+        }
+      })
+      await launcher.prefetch({ controller: authController, bootstrapUrl: "/dropbox/auth" })
+      popupCalls.length = 0
+      formPosts.length = 0
+      await launcher.launch({
+        controller: authController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/auth",
+        gesture: true
+      })
+      const popupOnReadyAuthClick = popupCalls[0] === "about:blank"
+      const postedOauthConnectIntoPopup = formPosts[0]?.action === "/recording_studio_oauth/outbound/dropbox/connect" &&
+        formPosts[0]?.target === "dropbox-auth" &&
+        formPosts[0]?.fields?.owner === "user" &&
+        formPosts[0]?.fields?.return_to?.includes("/dropbox/recordings/rec-1/connected") &&
+        formPosts[0]?.fields?.authenticity_token === "csrf-token"
+
+      const connectThenChooseController = controller()
+      const connectThenChooseButton = element("button")
+      connectThenChooseButton.dataset.providerKey = "dropbox"
+      connectThenChooseButton.dataset.providerLauncher = "dropbox"
+      connectThenChooseButton.dataset.providerBootstrapUrl = "/dropbox/connect-then-choose"
+      connectThenChooseController.providerButtonsByKey.set("dropbox", connectThenChooseButton)
+      let connectThenChooseBootstraps = 0
+      connectThenChooseController.fetchProviderBootstrap = async () => {
+        connectThenChooseBootstraps += 1
+        if (connectThenChooseBootstraps === 1) {
+          return {
+            client_id: "app-key",
+            needs_auth: true,
+            connect: {
+              url: "/recording_studio_oauth/outbound/dropbox/connect",
+              method: "post",
+              fields: {
+                authenticity_token: "csrf-token",
+                owner: "user",
+                return_to: "/dropbox/recordings/rec-1/connected?popup=1"
+              }
+            }
+          }
+        }
+        return { client_id: "app-key", provider_key: "dropbox" }
+      }
+      await launcher.prefetch({
+        controller: connectThenChooseController,
+        bootstrapUrl: "/dropbox/connect-then-choose",
+        button: connectThenChooseButton
+      })
+      popupCalls.length = 0
+      chooseCalls.length = 0
+      await launcher.launch({
+        controller: connectThenChooseController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/connect-then-choose",
+        button: connectThenChooseButton,
+        gesture: true
+      })
+      popupCalls.length = 0
+      chooseCalls.length = 0
+      await Promise.all([
+        relaunchUploadProvider(connectThenChooseController, "dropbox"),
+        relaunchUploadProvider(connectThenChooseController, "dropbox")
+      ])
+      await new Promise((resolve) => queueMicrotask(resolve))
+      const chooseAfterConnectWithoutClick = chooseCalls.length
+      const popupAfterConnectOnSamePage = popupCalls.length
+      const bootstrapsAfterRelaunch = connectThenChooseBootstraps
+      await launcher.launch({
+        controller: connectThenChooseController,
+        providerKey: "dropbox",
+        bootstrapUrl: "/dropbox/connect-then-choose",
+        button: connectThenChooseButton,
+        gesture: true
+      })
+      const chooseAfterConnectOnSamePage = chooseCalls.length === 1
+
+      const forbiddenButton = element("button")
+      forbiddenButton.disabled = false
+      const forbiddenController = controller()
+      forbiddenController.handleProviderBootstrapError = (error, button, { announce = true } = {}) => {
+        if (button && error?.status === 403) button.disabled = true
+        forbiddenController._bootstrapError = error
+        forbiddenController._announced = announce
+      }
+      forbiddenController.fetchProviderBootstrap = async () => {
+        const error = new Error("Forbidden")
+        error.status = 403
+        throw error
+      }
+      const unhandled = []
+      const onUnhandled = (reason) => unhandled.push(String(reason))
+      process.on("unhandledRejection", onUnhandled)
+      await launcher.prefetch({
+        controller: forbiddenController,
+        bootstrapUrl: "/dropbox/forbidden",
+        button: forbiddenButton
+      })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      process.off("unhandledRejection", onUnhandled)
+      const forbiddenPrefetchHandled = forbiddenController._bootstrapError?.status === 403
+      const forbiddenButtonDisabled = forbiddenButton.disabled === true
+      const forbiddenPrefetchAnnounced = forbiddenController._announced
+
+      const blockedController = controller()
+      blockedController.openPopup = () => null
+      blockedController.fetchProviderBootstrap = async () => ({
+        client_id: "app-key",
+        needs_auth: true,
+        connect: {
+          url: "/recording_studio_oauth/outbound/dropbox/connect",
+          method: "post",
+          fields: { authenticity_token: "csrf-token" }
+        }
+      })
+      await launcher.prefetch({ controller: blockedController, bootstrapUrl: "/dropbox/blocked" })
+      let blockedPopupMessage = null
+      try {
+        await launcher.launch({
+          controller: blockedController,
+          providerKey: "dropbox",
+          bootstrapUrl: "/dropbox/blocked",
+          gesture: true
+        })
+      } catch (error) {
+        blockedPopupMessage = error.message
+      }
+      const blockedPopupRejected = blockedPopupMessage === "The sign-in popup was blocked. Allow popups and try again."
+
+      process.stdout.write(JSON.stringify({
+        chooseOnReadyClick,
+        chooserSendsFilename,
+        chooseOnColdClick,
+        chooseAfterNextClick,
+        popupOnReadyAuthClick,
+        postedOauthConnectIntoPopup,
+        chooseAfterConnectWithoutClick,
+        chooseAfterConnectOnSamePage,
+        popupAfterConnectOnSamePage,
+        bootstrapsAfterRelaunch,
+        forbiddenPrefetchHandled,
+        forbiddenButtonDisabled,
+        forbiddenPrefetchAnnounced,
+        unhandledRejections: unhandled.length,
+        blockedPopupRejected
+      }))
+    JS
+  end
+end

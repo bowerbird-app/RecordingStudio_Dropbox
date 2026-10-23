@@ -21,6 +21,8 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
 
     assert connection.column_exists?(:recording_studio_recordings, :root_recording_id)
     assert connection.table_exists?(:recording_studio_accesses)
+    assert connection.table_exists?(:recording_studio_attachable_attachments)
+    assert connection.table_exists?(:active_storage_blobs)
     assert connection.table_exists?(:recording_studio_oauth_outbound_connections)
     assert connection.table_exists?(:recording_studio_oauth_outbound_handshakes)
     assert connection.table_exists?(:recording_studio_access_constraints)
@@ -70,6 +72,7 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
 
     refute_includes workspace_source, "Capabilities::Example"
     assert RecordingStudio.capability_enabled?(:accessible, for: Workspace)
+    assert RecordingStudio.capability_enabled?(:attachable, for: Workspace)
     refute RecordingStudio.capability_enabled?(:accessible, for: Folder)
     refute RecordingStudio.capability_enabled?(:accessible, for: Page)
     assert_includes ApplicationController.ancestors, RecordingStudio::UsesDefaultLayout

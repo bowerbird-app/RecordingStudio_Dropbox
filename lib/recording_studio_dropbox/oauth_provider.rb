@@ -7,6 +7,7 @@ module RecordingStudioDropbox
     TOKEN_URL = "https://api.dropboxapi.com/oauth2/token"
     REVOKE_URL = "https://api.dropboxapi.com/2/auth/token/revoke"
     TOKEN_ACCESS_TYPE = "offline"
+    SCOPES = %w[files.metadata.read files.content.read].freeze
 
     module_function
 
@@ -20,7 +21,7 @@ module RecordingStudioDropbox
         authorize_url: AUTHORIZE_URL,
         token_url: TOKEN_URL,
         revoke_url: REVOKE_URL,
-        scopes: Client::SCOPES,
+        scopes: SCOPES,
         pkce: true,
         refresh: true,
         extra_authorize_params: { "token_access_type" => TOKEN_ACCESS_TYPE }

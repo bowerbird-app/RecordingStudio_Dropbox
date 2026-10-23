@@ -19,7 +19,8 @@ class OauthProviderTest < Minitest::Test
     assert_equal "dropbox", provider.key
     assert_equal RecordingStudioDropbox::OauthProvider::AUTHORIZE_URL, provider.authorize_url
     assert_equal RecordingStudioDropbox::OauthProvider::TOKEN_URL, provider.token_url
-    assert_equal RecordingStudioDropbox::Client::SCOPES, provider.scopes
+    assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, provider.scopes
+    assert_equal %w[files.metadata.read files.content.read], provider.scopes
     assert provider.refresh?
     assert provider.pkce?
     assert_equal "offline", provider.extra_authorize_params["token_access_type"]

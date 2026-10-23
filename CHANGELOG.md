@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-23
+
+### Added
+- Optional RecordingStudioAttachable add-on. When Attachable is loaded, this gem
+  registers a Dropbox upload provider and mounts Chooser bootstrap, connect, and
+  the file-list import page at `/recording_studio_attachable/dropbox`.
+- `RecordingStudioDropbox.configuration.enabled`, `client_id` (Chooser app key),
+  and `page_size`.
+- Chooser launcher JavaScript, pinned as `recording_studio_dropbox/dropbox_picker_launcher`.
+
+### Changed
+- `RecordingStudioDropbox.register_oauth_provider` now requests
+  `files.metadata.read` and `files.content.read`. It no longer requests
+  `files.content.write` by default.
+- Depends on `recording_studio_attachable` `>= 0.21.0`, `< 1.0` as a runtime
+  gemspec dependency so hosts get that version floor. The add-on still loads
+  only through `ActiveSupport.on_load(:recording_studio_attachable)`.
+
+### Upgrade notes
+- Add `recording_studio_attachable` (`>= 0.21.0`, `< 1.0`). Until v0.21.0 is
+  tagged, pin git ref `3d3dadc9072768dba4a5a993aefaddfbe85f4502`. Run Attachable
+  install and migrations, and mount its engine.
+- Set `RecordingStudioDropbox.configuration.enabled = true` and
+  `client_id` to the Dropbox app key used by Chooser. Dummy placeholder values
+  such as `dummy-dropbox-client-id` do not count.
+- Oauth still uses `credentials.recording_studio_oauth.outbound.dropbox.client_id`
+  and `client_secret`. The Chooser app key is `configuration.client_id`.
+- If you upload into Dropbox with `Client#upload_file`, pass
+  `scopes:` that include `files.content.write` to `register_oauth_provider`.
+- In the Dropbox app console, add this host to Chooser / Saver domains. Allow
+  `https://www.dropbox.com/static/api/2/dropins.js` in `script-src` if you use CSP.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
@@ -36,5 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.3.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.1.0
