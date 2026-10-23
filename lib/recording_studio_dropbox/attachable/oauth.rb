@@ -13,23 +13,13 @@ module RecordingStudioDropbox
 
       def connection_status(root:, actor:)
         return unless defined?(::RecordingStudioOauth)
-        return oauth_connection_status(root, actor) if ::RecordingStudioOauth.respond_to?(:connection_status)
 
-        connection(root: root, actor: actor) ? :connected : :missing
+        ::RecordingStudioOauth.connection_status(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
       end
 
       def connection_id_for(root:, actor:)
         return unless defined?(::RecordingStudioOauth)
-        return oauth_connection_id(root, actor) if ::RecordingStudioOauth.respond_to?(:connection_id_for)
 
-        connection(root: root, actor: actor)&.id
-      end
-
-      def oauth_connection_status(root, actor)
-        ::RecordingStudioOauth.connection_status(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
-      end
-
-      def oauth_connection_id(root, actor)
         ::RecordingStudioOauth.connection_id_for(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
       end
 

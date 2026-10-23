@@ -115,7 +115,7 @@ gem "recording_studio_dropbox",
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.14.1"
+    tag: "v0.15.1"
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",

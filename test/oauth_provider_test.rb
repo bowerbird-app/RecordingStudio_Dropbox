@@ -62,6 +62,26 @@ class OauthProviderTest < Minitest::Test
     RecordingStudioDropbox.configuration.scopes = original
   end
 
+  def test_register_oauth_provider_raises_when_only_one_credential_is_present
+    with_blank_oauth_credentials do
+      missing_secret = assert_raises(ArgumentError) do
+        RecordingStudioDropbox.register_oauth_provider(
+          client_id: "id",
+          http: ->(_url, _params) { [200, {}] }
+        )
+      end
+      assert_equal "client_secret is required", missing_secret.message
+
+      missing_id = assert_raises(ArgumentError) do
+        RecordingStudioDropbox.register_oauth_provider(
+          client_secret: SECRET,
+          http: ->(_url, _params) { [200, {}] }
+        )
+      end
+      assert_equal "client_id is required", missing_id.message
+    end
+  end
+
   def test_register_oauth_provider_skips_when_both_credentials_are_blank
     registered = false
 

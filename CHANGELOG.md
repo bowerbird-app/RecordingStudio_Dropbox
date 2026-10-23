@@ -43,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `register_oauth_provider`) so they include `files.content.write`.
 - In the Dropbox app console, add this host to Chooser / Saver domains. Allow
   `https://www.dropbox.com/static/api/2/dropins.js` in `script-src` if you use CSP.
+- RecordingStudioOauth is now `>= 0.15.0`, `< 1.0`. Pin git tag `v0.15.1`.
+  Attachable Dropbox connect uses `RecordingStudioOauth.connection_status` and
+  `connection_id_for` (including `:needs_reconnect`). Oauth 0.15.1 has no
+  migration.
 
 ## [0.2.0] - 2026-10-22
 

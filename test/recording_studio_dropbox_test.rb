@@ -51,7 +51,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.2"'
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.14.1", "< 1.0"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.15.0", "< 1.0"'
     refute_includes gemspec, 'spec.add_dependency "recording_studio_attachable"'
   end
 
@@ -142,7 +142,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes gemfile, 'tag: "v0.6.0"'
     refute_includes gemfile, 'tag: "v0.5.1"'
     assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.213"'
-    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.14.1"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.15.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.5.0"'
     refute_includes gemfile, "recording_studio/v3.0.0"
     refute_includes gemfile, 'tag: "v4.4.0"'

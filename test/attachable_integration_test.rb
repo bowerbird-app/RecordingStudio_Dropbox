@@ -135,14 +135,27 @@ class AttachableIntegrationTest < Minitest::Test
     refute_equal metadata_size, result.fetch(:byte_size)
   end
 
-  def test_attachable_oauth_does_not_query_outbound_connection_rows
-    source = File.read(
-      File.expand_path("../lib/recording_studio_dropbox/attachable/oauth.rb", __dir__)
-    )
+  def test_attachable_oauth_reports_needs_reconnect
+    root = Object.new
+    actor = Object.new
+    seen = nil
+    live = Object.new
 
-    refute_includes source, "OutboundConnection"
-    refute_includes source, "live_connection"
-    assert_includes source, "connection_for"
-    assert_includes source, "connection_status"
+    status = RecordingStudioOauth.stub(:connection_for, live) do
+      RecordingStudioOauth.stub(
+        :connection_status,
+        ->(**kwargs) {
+          seen = kwargs
+          :needs_reconnect
+        }
+      ) do
+        RecordingStudioDropbox::Attachable::Oauth.connection_status(root: root, actor: actor)
+      end
+    end
+
+    assert_equal :needs_reconnect, status
+    assert_equal RecordingStudioDropbox::Attachable::Registration::PROVIDER_KEY, seen[:provider]
+    assert_equal root, seen[:root]
+    assert_equal actor, seen[:actor]
   end
 end
