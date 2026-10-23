@@ -3,8 +3,11 @@
 ENV["RAILS_ENV"] = "test"
 require_relative "test_helper"
 require_relative "dummy/config/environment"
+require_relative "dummy/test/support/reset_seed_data"
 
 require "rails/test_help"
+
+ResetSeedData.call
 
 class RecordingStudioDeclarationsTest < ActiveSupport::TestCase
   test "dummy recordable declarations validate and expose parent/root introspection" do

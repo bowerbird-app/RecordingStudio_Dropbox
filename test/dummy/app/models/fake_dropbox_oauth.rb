@@ -27,7 +27,7 @@ class FakeDropboxOauth
           "user_id" => user_id,
           "email" => email,
           "expires_in" => expires_in,
-          "scope" => scope || RecordingStudioDropbox::Client::SCOPES.join(" ")
+          "scope" => scope || RecordingStudioDropbox::OauthProvider::SCOPES.join(" ")
         },
         code_challenge
       )
@@ -64,7 +64,7 @@ class FakeDropboxOauth
           "access_token" => "refreshed-access-#{SecureRandom.hex(8)}",
           "refresh_token" => params["refresh_token"].to_s,
           "expires_in" => 3600,
-          "scope" => RecordingStudioDropbox::Client::SCOPES.join(" ")
+          "scope" => RecordingStudioDropbox::OauthProvider::SCOPES.join(" ")
         }
       ]
     end

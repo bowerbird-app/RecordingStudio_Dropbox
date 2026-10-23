@@ -17,7 +17,9 @@ class DocsController < ApplicationController
   end
 
   def recordings_tree
-    recordings = RecordingStudio::Recording.includes(:recordable).reorder(:created_at, :id).to_a
+    recordings = RecordingStudio::Recording.includes(:recordable).reorder(:created_at, :id).reject do |recording|
+      tree_hidden_recording?(recording)
+    end
     recordings_by_parent_id = recordings.group_by(&:parent_recording_id)
 
     @recording_tree = recordings_by_parent_id.fetch(nil, []).map do |recording|
@@ -57,6 +59,11 @@ class DocsController < ApplicationController
     recordable_class.count
   rescue ActiveRecord::ActiveRecordError
     0
+  end
+
+  def tree_hidden_recording?(recording)
+    name = recording.recordable_type.to_s.demodulize
+    name == "Access"
   end
 
   def build_recording_node(recording, recordings_by_parent_id)

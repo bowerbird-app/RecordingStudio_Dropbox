@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.2.0", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.3.0", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -17,12 +17,42 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_kind_of Class, ::RecordingStudioDropbox::Engine
   end
 
+  def test_attachable_add_on_uses_public_hooks
+    attachable = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable.rb", __dir__))
+    engine = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
+    registration = File.read(File.expand_path("../lib/recording_studio_dropbox/attachable/registration.rb", __dir__))
+    bootstrap = File.read(
+      File.expand_path("../app/controllers/recording_studio_dropbox/attachable/bootstrap_controller.rb", __dir__)
+    )
+    launcher = File.read(
+      File.expand_path("../app/javascript/recording_studio_dropbox/dropbox_picker_launcher.js", __dir__)
+    )
+
+    assert_includes engine, "ActiveSupport.on_load(:recording_studio_attachable)"
+    assert_includes engine, "Gem::Version.new(RecordingStudioAttachable::VERSION)"
+    assert_includes attachable, "register_adapter_routes(:dropbox)"
+    assert_includes attachable, 'mount RecordingStudioDropbox::Attachable::Engine, at: "/dropbox", as: :dropbox'
+    attachable_engine = File.read(
+      File.expand_path("../lib/recording_studio_dropbox/attachable/engine.rb", __dir__)
+    )
+    assert_includes attachable_engine, "register_upload_provider"
+    assert_includes registration, "reconnect_error:"
+    assert_includes registration, "connect:"
+    refute_includes registration, "Adapter::ClientPicker"
+    refute_includes registration, "Adapter::Configurable"
+    assert_includes registration, "context:"
+    refute_includes registration, "**"
+    refute_includes bootstrap, "except(:connect)"
+    assert_includes bootstrap, "provider_connect_payload"
+    assert_includes launcher, 'from "recording_studio_attachable/provider_launchers"'
+  end
+
   def test_gemspec_pins_recording_studio_4_2
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.2"'
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.14.1", "< 1.0"'
-    refute_includes gemspec, "recording_studio_attachable"
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.15.0", "< 1.0"'
+    refute_includes gemspec, 'spec.add_dependency "recording_studio_attachable"'
   end
 
   def test_gemspec_excludes_cursor_config
@@ -70,7 +100,16 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes gitignore, "test/dummy/config/master.key"
     assert_includes gitignore, "config/master.key"
 
+    initializer = File.read(File.join(dummy_root, "config/initializers/recording_studio_dropbox.rb"))
+    assert_includes initializer, "Rails.application.credentials"
+    assert_includes initializer, "DROPBOX_CLIENT_ID"
+    assert_includes initializer, "DROPBOX_CLIENT_SECRET"
+    assert_includes initializer, ":attachable"
+    refute_includes initializer, "Rails.application.credentials.recording_studio_oauth"
+
     Dir.glob("#{dummy_root}/**/*.{rb,yml,erb}").each do |path|
+      next if path.end_with?("config/initializers/recording_studio_dropbox.rb")
+
       File.foreach(path) do |line|
         next if line.match?(/\A\s*#/)
 
@@ -93,14 +132,17 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.11.0", require: false'
     refute_includes gemfile, 'tag: "v0.10.0"'
     refute_includes gemfile, 'tag: "v0.17.0"'
-    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_attachable", tag: "v0.15.0"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_attachable"'
+    assert_includes gemfile, 'tag: "v0.21.0"'
+    refute_includes gemfile, 'ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"'
+    refute_includes gemfile, 'tag: "v0.15.0"'
     refute_includes gemfile, 'tag: "v0.10.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_root_switchable", tag: "v0.9.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_cache", tag: "v0.5.0"'
     refute_includes gemfile, 'tag: "v0.6.0"'
     refute_includes gemfile, 'tag: "v0.5.1"'
     assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.213"'
-    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.14.1"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.15.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.5.0"'
     refute_includes gemfile, "recording_studio/v3.0.0"
     refute_includes gemfile, 'tag: "v4.4.0"'
@@ -117,6 +159,8 @@ class RecordingStudioDropboxTest < Minitest::Test
 
   def test_dummy_schema_includes_accessible_depends_on_recording_id
     schema = File.read(File.expand_path("dummy/db/schema.rb", __dir__))
+    assert_includes schema, 'create_table "recording_studio_attachable_attachments"'
+    assert_includes schema, 'create_table "active_storage_blobs"'
     assert_includes schema, 'create_table "recording_studio_oauth_outbound_connections"'
     assert_includes schema, 'create_table "recording_studio_oauth_outbound_handshakes"'
     migration = File.read(
@@ -231,8 +275,6 @@ class RecordingStudioDropboxTest < Minitest::Test
       "Page",
       "RecordingStudioSiteSettings::SiteSetting",
       "RecordingStudioAttachable::Attachment",
-      "RecordingStudioAttachable::Library",
-      "RecordingStudioAttachable::Placement",
       "RecordingStudio::Access",
       "RecordingStudioApi::AdminApi",
       "RecordingStudioApi::ApiAccessToken",
@@ -252,6 +294,8 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme_source, "/recording_studio"
     assert_includes readme_source, "redirects to `/`"
     assert_includes readme_source, "fake Dropbox provider"
+    assert_includes readme_source, "/attachments/upload"
+    assert_includes readme_source, "DROPBOX_CLIENT_ID"
     refute_includes readme_source, "flat_pack_sidebar"
   end
 
@@ -261,13 +305,20 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "RecordingStudioDropbox::Client"
     assert_includes readme, "OauthToken"
     assert_includes readme, "connection_for"
+    assert_includes readme, "both Oauth `client_id` and `client_secret` are blank"
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_id"
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_secret"
     assert_includes readme, "ReconnectRequired"
+    assert_includes readme, "register_upload_provider"
+    assert_includes readme, "config.enabled"
+    assert_includes readme, "config.client_id"
     assert_includes readme, "`content_type` is always `nil`"
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
+    assert_includes readme, 'tag: "v0.21.0"'
+    refute_includes readme, "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"
+    refute_includes readme, "Planned Attachable wiring"
     refute_includes readme, "Dummy credentials"
     refute_includes readme, "Template Demo"
     refute_includes readme, "ExampleService"

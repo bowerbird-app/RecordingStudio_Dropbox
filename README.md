@@ -2,7 +2,7 @@
 
 This gem talks to the Dropbox HTTP API for Recording Studio. It lists folders, fetches metadata, downloads files, and uploads files. Files are copied into storage later. This gem does not link Dropbox files in place.
 
-Dropbox uses user OAuth. Tokens live on RecordingStudioOauth outbound connections. This gem does not register an Attachable upload source in this release. That work is a later phase.
+Dropbox uses user OAuth. Tokens live on RecordingStudioOauth outbound connections. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page.
 
 ## What you get
 
@@ -22,7 +22,15 @@ Download returns a `DownloadedFile` with `body`, `filename`, and `content_type`.
 
 HTTP uses `Net::HTTP`, the same client Recording Studio Attachable uses for Dropbox today. There is no Dropbox SDK.
 
-Scopes this client needs are `files.metadata.read`, `files.content.read`, and `files.content.write`.
+Oauth registration uses `files.metadata.read` and `files.content.read`. Override that default through `RecordingStudioDropbox.configure` if you need more:
+
+```ruby
+RecordingStudioDropbox.configure do |config|
+  config.scopes = %w[files.metadata.read files.content.read files.content.write]
+end
+```
+
+`Client#upload_file` still needs `files.content.write` in that list.
 
 ## Shared shape with Google Drive
 
@@ -36,7 +44,7 @@ Register the Dropbox provider from this gem, not from Oauth:
 RecordingStudioDropbox.register_oauth_provider
 ```
 
-That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`.
+That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`. If both Oauth `client_id` and `client_secret` are blank, the call skips registration so a generated initializer can boot before credentials exist. It does not rescue other Oauth errors.
 
 Set these credential keys (never commit the values):
 
@@ -63,7 +71,26 @@ Tests can still pass a callable and stub `Net::HTTP`. They should not hit Dropbo
 
 `RecordingStudioDropbox::AccessToken.new(provider)` still reads `#call` first, then `#access_token`. A raw String is a misconfiguration and raises `ArgumentError`. A blank or nil token at request time raises `ReconnectRequired`.
 
-`RecordingStudioDropbox.configure` yields the configuration and returns it.
+`RecordingStudioDropbox.configure` yields the configuration and returns it. Dropbox options live there (`enabled`, `client_id`, `page_size`, `scopes`). Hosts do not set them on Attachable `config.dropbox`.
+
+## Attachable upload add-on
+
+The add-on loads only when `RecordingStudioAttachable` is present. It uses Attachable's public hooks: `ActiveSupport.on_load(:recording_studio_attachable)`, `register_upload_provider`, and `register_adapter_routes(:dropbox)`.
+
+Turn it on in the host initializer. Attachable is optional; skip it if you only need the Dropbox client.
+
+```ruby
+RecordingStudioDropbox.configure do |config|
+  config.enabled = true
+  config.client_id = "your-dropbox-app-key"
+  config.page_size = 25
+  config.scopes = %w[files.metadata.read files.content.read]
+end
+```
+
+`enabled` and `client_id` are this gem's settings. `client_id` is the Dropbox app key for Chooser. Dummy values such as `dummy-dropbox-client-id` are ignored. Routes stay at `/recording_studio_attachable/dropbox`.
+
+Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` only from a user click. The file-list page uses Attachable's `providers/_remote_file_browser` for files and folders. Bootstrap `needs_auth` is the auth signal; `connect` is always the connect recipe.
 
 ## Errors
 
@@ -77,10 +104,6 @@ Token problems raise `RecordingStudioDropbox::ReconnectRequired`. Callers can tu
 
 Do not rescue `StandardError` around these calls. Exception messages do not include the Dropbox response body.
 
-## Planned Attachable wiring
-
-A later phase will register this gem with RecordingStudioAttachable through `register_upload_provider`. Do not add that registration here.
-
 ## Install
 
 Add the gem from GitHub. It is not published to RubyGems.
@@ -88,29 +111,47 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.2.0"
+    tag: "v0.3.0"
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.14.1"
+    tag: "v0.15.1"
+
+gem "recording_studio_attachable",
+    github: "bowerbird-app/RecordingStudio_attachable",
+    tag: "v0.21.0"
 ```
 
 ```bash
 bundle install
 bin/rails generate recording_studio_oauth:install
 bin/rails generate recording_studio_oauth:migrations
+bin/rails generate recording_studio_attachable:install
+bin/rails generate recording_studio_attachable:migrations
 bin/rails generate recording_studio_dropbox:install
 bin/rails db:migrate
 ```
 
-Mount Oauth so people can connect, disconnect, and reconnect:
+Mount Oauth and Attachable:
 
 ```ruby
 mount RecordingStudioOauth::Engine, at: "/recording_studio_oauth"
+mount RecordingStudioAttachable::Engine, at: "/recording_studio_attachable"
 ```
 
-The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`. Dummy uses a fake Dropbox provider so it runs without real Dropbox credentials.
+The dummy app at `test/dummy` is a host that boots the engine. Sign in at `/users/sign_in` with `admin@admin.com` / `Password`. Dummy uses a fake Dropbox provider so tests run without real Dropbox credentials.
+
+Boot the dummy from `test/dummy`:
+
+```bash
+cd test/dummy
+bundle install
+bin/rails db:setup
+bin/dev
+```
+
+Optional dummy env vars for a live Dropbox app: `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, and `RAILS_DEVELOPMENT_HOSTS`. Dummy also reads `attachable.dropbox` or `dropbox` from Rails credentials when those files exist. The upload page for the seeded Studio Workspace is `/recording_studio_attachable/recordings/<workspace-root-id>/attachments/upload`. Seeds print that path.
 
 ## Version
 
-0.2.0
+0.3.0

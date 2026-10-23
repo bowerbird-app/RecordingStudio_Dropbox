@@ -1,0 +1,11 @@
+en:
+  recording_studio_dropbox:
+    chooser_requires_config: "Dropbox Chooser needs an app key"
+    select_at_least_one: "Select at least one file"
+    imported_from_dropbox: "Imported from Dropbox"
+    file_too_large: "That Dropbox file is over the size limit"
+    disconnect_failed: "Dropbox isn't connected."
+    reconnect_to_continue: "Reconnect Dropbox to continue"
+    imported_count:
+      one: "Imported 1 file."
+      other: "Imported %{count} files."

@@ -40,12 +40,33 @@ begin
   folder_recording = find_or_record_child.call(folder, root_recording, root_recording)
 
   find_or_record_child.call(page, root_recording, folder_recording)
+
+  grant_workspace_admin = lambda do |recording, actor|
+    next unless defined?(RecordingStudioAccessible)
+
+    original = RecordingStudioAccessible.configuration.access_management_authorizer
+    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
+    result = RecordingStudioAccessible.grant_access(
+      recording: recording,
+      actor: actor,
+      role: :admin,
+      manager_actor: actor
+    )
+    raise result.error if result.failure?
+  ensure
+    RecordingStudioAccessible.configuration.access_management_authorizer = original if defined?(original)
+  end
+
+  grant_workspace_admin.call(root_recording, user)
 ensure
   Current.actor = previous_actor
 end
+
+upload_path = "/recording_studio_attachable/recordings/#{root_recording.id}/attachments/upload"
 
 puts "Seeded: admin@admin.com / Password"
 puts "Seeded: Workspace '#{workspace.name}' with root recording ##{root_recording.id}"
 puts "Seeded: Workspace '#{accessible_workspace.name}' with root recording ##{accessible_root_recording.id}"
 puts "Seeded: Workspace '#{private_workspace.name}' with root recording ##{private_root_recording.id}"
 puts "Seeded: Folder '#{folder.name}' and page '#{page.title}'"
+puts "Dropbox upload page: #{upload_path}"

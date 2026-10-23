@@ -169,6 +169,26 @@ class ClientTest < Minitest::Test
     assert_equal JSON.generate({ path: "id:file-1" }, ascii_only: true), captured.first[:dropbox_arg]
   end
 
+  def test_download_aborts_when_the_byte_ceiling_is_exceeded
+    response = http_response(code: 200, body: "1234567890", headers: { "Content-Type" => "application/octet-stream" })
+
+    stub_http([{ path: "/2/files/download", response: response }]) do
+      error = assert_raises(ArgumentError) { client.download(path: "/Huge.bin", max_bytes: 4) }
+
+      assert_includes error.message, "size limit"
+    end
+  end
+
+  def test_download_aborts_when_a_later_chunk_exceeds_the_byte_ceiling
+    response = http_response(code: 200, body: "12345678", headers: { "Content-Type" => "application/octet-stream" })
+
+    stub_http([{ path: "/2/files/download", response: response, chunks: %w[1234 5678] }]) do
+      error = assert_raises(ArgumentError) { client.download(path: "/Huge.bin", max_bytes: 6) }
+
+      assert_includes error.message, "size limit"
+    end
+  end
+
   def test_download_without_result_header_still_returns_body
     response = http_response(code: 200, body: "raw", headers: { "Content-Type" => "application/octet-stream" })
 
@@ -541,9 +561,10 @@ class ClientTest < Minitest::Test
 
   def stub_http(queue, &)
     remaining = queue.dup
+    attach_chunks = method(:attach_download_chunks)
     Net::HTTP.stub(:start, lambda { |host, _port, **_options, &http_block|
       http = Object.new
-      http.define_singleton_method(:request) do |request|
+      http.define_singleton_method(:request) do |request, &block|
         spec = remaining.shift
         raise "unexpected Dropbox request #{request.path}" unless spec
         raise "path mismatch #{request.path} vs #{spec[:path]}" unless request.path == spec[:path]
@@ -557,9 +578,19 @@ class ClientTest < Minitest::Test
             dropbox_arg: request["Dropbox-API-Arg"]
           }
         end
-        spec[:response]
+        response = attach_chunks.call(spec[:response], spec[:chunks])
+        block ? block.call(response) : response
       end
       http_block.call(http)
     }, &)
+  end
+
+  def attach_download_chunks(response, chunks)
+    pieces = chunks || [response.body]
+    response.define_singleton_method(:read_body) do |&chunk_block|
+      pieces.each { |piece| chunk_block&.call(piece) }
+      pieces.join
+    end
+    response
   end
 end

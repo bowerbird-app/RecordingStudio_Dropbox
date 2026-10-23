@@ -57,5 +57,15 @@
         ) %>
       <% end %>
     <% end %>
+
+    <% if @root_recording && defined?(RecordingStudioAttachable) %>
+      <%= link_to recording_studio_attachable.recording_attachment_upload_path(@root_recording), class: "inline-flex" do %>
+        <%= render FlatPack::Button::Component.new(
+          text: "Upload files",
+          style: :secondary,
+          size: :md
+        ) %>
+      <% end %>
+    <% end %>
   </div>
 </div>

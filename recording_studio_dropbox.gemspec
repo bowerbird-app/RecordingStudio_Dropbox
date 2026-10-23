@@ -7,10 +7,11 @@ Gem::Specification.new do |spec|
   spec.version     = RecordingStudioDropbox::VERSION
   spec.authors     = ["Bowerbird"]
   spec.homepage    = "https://github.com/bowerbird-app/RecordingStudio_Dropbox"
-  spec.summary     = "Dropbox API client for Recording Studio"
+  spec.summary     = "Dropbox API client and Attachable upload add-on for Recording Studio"
   spec.description = "Lists, downloads, and uploads Dropbox files for Recording Studio. " \
                      "Tokens come from RecordingStudioOauth.connection_for on a Dropbox " \
-                     "outbound provider registered by this gem."
+                     "outbound provider registered by this gem. When RecordingStudioAttachable " \
+                     "is loaded, this gem registers the Dropbox upload provider."
   spec.license     = "MIT"
   spec.required_ruby_version = ">= 3.3.0"
 
@@ -28,5 +29,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", "~> 8.1.0"
   spec.add_dependency "recording_studio", "~> 4.2"
-  spec.add_dependency "recording_studio_oauth", ">= 0.14.1", "< 1.0"
+  spec.add_dependency "recording_studio_oauth", ">= 0.15.0", "< 1.0"
 end

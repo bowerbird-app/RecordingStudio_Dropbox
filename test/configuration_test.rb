@@ -19,4 +19,20 @@ class ConfigurationTest < Minitest::Test
     assert_same RecordingStudioDropbox.configuration, result
     assert_kind_of RecordingStudioDropbox::Configuration, result
   end
+
+  def test_attachable_add_on_defaults_to_off_until_an_app_key_is_set
+    refute_predicate @configuration, :enabled?
+    refute_predicate @configuration, :chooser_configured?
+    refute_predicate @configuration, :available?
+
+    @configuration.enabled = true
+    @configuration.client_id = "dummy-dropbox-client-id"
+    refute_predicate @configuration, :available?
+
+    @configuration.client_id = "real-dropbox-app-key"
+    assert_predicate @configuration, :available?
+    assert_equal 25, @configuration.page_size
+    assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, @configuration.scopes
+    assert_equal RecordingStudioDropbox::Client::SCOPES, @configuration.scopes
+  end
 end
