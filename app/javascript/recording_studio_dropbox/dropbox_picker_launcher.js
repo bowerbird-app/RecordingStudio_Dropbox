@@ -1,14 +1,17 @@
 import {
   createBootstrapCache,
   csrfToken,
+  hideProviderContinueButton,
   loadScript,
   openProviderAuth,
   providerNeedsAuth,
-  registerUploadProviderLauncher
+  registerUploadProviderLauncher,
+  showProviderContinueButton
 } from "recording_studio_attachable/provider_launchers"
 
 const CHOOSER_SRC = "https://www.dropbox.com/static/api/2/dropins.js"
 const sessions = createBootstrapCache()
+const pendingConnects = new WeakMap()
 let chooserPromise
 
 function chooserAppKeyFrom(button) {
@@ -80,7 +83,8 @@ function startSession(controller, bootstrapUrl) {
   return sessions.sessionFor(bootstrapUrl, async () => {
     const bootstrap = await controller.fetchProviderBootstrap(bootstrapUrl)
     if (bootstrap.client_id) {
-      await ensureDropboxChooserLoaded(bootstrap.client_id)
+      const chooser = ensureDropboxChooserLoaded(bootstrap.client_id)
+      if (!providerNeedsAuth(bootstrap)) await chooser
     }
     return bootstrap
   })
@@ -93,11 +97,26 @@ function canOpenNow(session) {
   return Boolean(window.Dropbox?.choose)
 }
 
-function chooserReadyDuringWarmup(session) {
-  if (!window.Dropbox?.choose) return false
-  if (!session?.ready || session.error || !session.bootstrap) return true
+function pendingUrlsFor(controller) {
+  let urls = pendingConnects.get(controller)
+  if (!urls) {
+    urls = new Set()
+    pendingConnects.set(controller, urls)
+  }
+  return urls
+}
 
-  return !providerNeedsAuth(session.bootstrap)
+function markPendingConnect(controller, bootstrapUrl) {
+  if (!controller || !bootstrapUrl) return
+
+  pendingUrlsFor(controller).add(bootstrapUrl)
+}
+
+function consumePendingConnect(controller, bootstrapUrl) {
+  const urls = pendingConnects.get(controller)
+  if (!urls?.delete(bootstrapUrl)) return false
+
+  return true
 }
 
 async function applySelections(controller, providerKey, selections) {
@@ -111,6 +130,7 @@ async function applySelections(controller, providerKey, selections) {
 }
 
 function openChooserNow(controller, providerKey) {
+  hideProviderContinueButton(controller)
   controller.setProviderStatus("Opening Dropbox…")
   return openChooser().then((selections) => applySelections(controller, providerKey, selections))
 }
@@ -118,8 +138,9 @@ function openChooserNow(controller, providerKey) {
 function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
   if (providerNeedsAuth(bootstrap)) {
     csrfToken(controller, bootstrap)
-    openProviderAuth(controller, bootstrap, providerKey)
-    sessions.forget(bootstrapUrl)
+    if (openProviderAuth(controller, bootstrap, providerKey)) {
+      markPendingConnect(controller, bootstrapUrl)
+    }
     return
   }
 
@@ -140,6 +161,15 @@ function waitForSession(controller, session, bootstrapUrl, button) {
   })
 }
 
+function continueAfterAuth(controller, providerKey, bootstrapUrl, button, session) {
+  consumePendingConnect(controller, bootstrapUrl)
+  if (providerNeedsAuth(session.bootstrap)) return
+
+  showProviderContinueButton(controller, button, "Open Dropbox", () => {
+    openChooserNow(controller, providerKey)
+  })
+}
+
 registerUploadProviderLauncher("dropbox", {
   forget(bootstrapUrl) {
     sessions.forget(bootstrapUrl)
@@ -157,14 +187,22 @@ registerUploadProviderLauncher("dropbox", {
 
   launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
     prefetchChooser(button)
+    hideProviderContinueButton(controller)
     const session = startSession(controller, bootstrapUrl)
-    if (gesture && chooserReadyDuringWarmup(session)) {
-      return openChooserNow(controller, providerKey)
-    }
     if (gesture && canOpenNow(session)) {
       return openWithGesture(controller, providerKey, session.bootstrap, bootstrapUrl)
     }
+    if (gesture) {
+      return waitForSession(controller, session, bootstrapUrl, button)
+    }
 
-    return waitForSession(controller, session, bootstrapUrl, button)
+    return session.promise.then(() => {
+      if (session.error) throw session.error
+      continueAfterAuth(controller, providerKey, bootstrapUrl, button, session)
+    }).catch((error) => {
+      sessions.forget(bootstrapUrl)
+      controller.handleProviderBootstrapError?.(error, button)
+      throw error
+    })
   }
 })

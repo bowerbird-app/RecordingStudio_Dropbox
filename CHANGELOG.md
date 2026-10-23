@@ -26,7 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raises if the loaded Attachable version is older than `0.21.0`.
 - Hosts set Dropbox options through `RecordingStudioDropbox.configure`.
   This gem does not register an Attachable `config.dropbox` adapter.
-- Dropbox opens on the first click after the page loads.
+- One Dropbox click opens Chooser when you are already connected, or Dropbox
+  sign-in when you are not. After sign-in, use Open Dropbox to pick files.
+  Chooser does not open while Dropbox is still checking whether you are signed in.
 
 ### Upgrade notes
 - Attachable is optional. If you want Chooser and the file-list import page,
