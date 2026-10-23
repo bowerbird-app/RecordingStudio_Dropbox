@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raises if the loaded Attachable version is older than `0.21.0`.
 - Hosts set Dropbox options through `RecordingStudioDropbox.configure`.
   This gem does not register an Attachable `config.dropbox` adapter.
+- The Attachable Dropbox button loads Chooser and bootstrap on page load and
+  opens the picker or connect window on that click. It does not wait until a
+  later click, and it does not keep a stale reconnect bootstrap after connect.
 
 ### Upgrade notes
 - Attachable is optional. If you want Chooser and the file-list import page,

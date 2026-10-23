@@ -17,6 +17,9 @@ class DropboxPickerLauncherTest < Minitest::Test
     assert_includes launcher_source, "csrfToken"
     assert_includes launcher_source, "if (gesture && canOpenNow(session))"
     assert_includes launcher_source, "window.Dropbox.choose"
+    assert_includes launcher_source, "dropboxAppKey"
+    assert_includes launcher_source, "sessions.forget(bootstrapUrl)"
+    refute_includes launcher_source, "script.defer"
     refute_includes launcher_source, "showProviderContinueButton"
     refute_includes launcher_source, "Choose from Dropbox"
     refute_includes launcher_source, "oauth_connect_url"
@@ -27,9 +30,12 @@ class DropboxPickerLauncherTest < Minitest::Test
     stdout, stderr, status = run_node_launcher_harness
     assert status.success?, "#{stderr}\n#{stdout}"
     result = JSON.parse(stdout)
+    assert_equal true, result.fetch("singleClickOpensChooser")
     assert_equal true, result.fetch("chooseOnReadyClick")
     assert_equal true, result.fetch("chooserSendsFilename")
+    assert_equal true, result.fetch("prefetchAwaitsChooser")
     assert_equal 0, result.fetch("chooseOnColdClick")
+    assert_equal 0, result.fetch("popupOnColdClick")
     assert_equal true, result.fetch("chooseAfterNextClick")
     assert_equal true, result.fetch("popupOnReadyAuthClick")
     assert_equal true, result.fetch("postedOauthConnectIntoPopup")
@@ -89,6 +95,7 @@ class DropboxPickerLauncherTest < Minitest::Test
       const popupCalls = []
       const formPosts = []
       const selectionNames = []
+      const scripts = []
 
       function element(tag = "div") {
         return {
@@ -99,15 +106,26 @@ class DropboxPickerLauncherTest < Minitest::Test
           children: [],
           attributes: {},
           disabled: false,
-          setAttribute(name, value) { this.attributes[name] = value },
+          setAttribute(name, value) {
+            this.attributes[name] = value
+            if (name === "data-app-key") this.dataset.appKey = value
+          },
+          getAttribute(name) {
+            return this.attributes[name]
+          },
           querySelector() { return null },
           appendChild(child) { this.children.push(child); return child },
           replaceChildren(...nodes) { this.children = nodes }
         }
       }
 
+      const dropboxButton = element("button")
+      dropboxButton.dataset.providerLauncher = "dropbox"
+      dropboxButton.dataset.dropboxAppKey = "app-key"
+
       const head = {
         appendChild(script) {
+          scripts.push(script)
           queueMicrotask(() => {
             script.dataset.loaded = "true"
             globalThis.window.Dropbox = {
@@ -123,7 +141,12 @@ class DropboxPickerLauncherTest < Minitest::Test
       }
 
       globalThis.document = {
-        querySelector() { return null },
+        querySelector(sel) {
+          if (sel === "[data-provider-launcher='dropbox']") return dropboxButton
+          const srcMatch = String(sel).match(/^script\\[src='(.+)'\\]$/)
+          if (srcMatch) return scripts.find((script) => script.src === srcMatch[1]) || null
+          return null
+        },
         createElement(tag) {
           const node = element(tag)
           node.type = ""
@@ -155,6 +178,14 @@ class DropboxPickerLauncherTest < Minitest::Test
       await import("./dropbox_picker_launcher.js")
       const launcher = getUploadProviderLauncher("dropbox")
 
+      function pickerButton() {
+        const button = element("button")
+        button.dataset.providerKey = "dropbox"
+        button.dataset.providerLauncher = "dropbox"
+        button.dataset.dropboxAppKey = "app-key"
+        return button
+      }
+
       function controller() {
         const instance = {
           element: element(),
@@ -178,32 +209,43 @@ class DropboxPickerLauncherTest < Minitest::Test
       }
 
       const readyController = controller()
-      await launcher.prefetch({ controller: readyController, bootstrapUrl: "/dropbox/ready" })
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      const readyButton = pickerButton()
+      readyButton.dataset.providerBootstrapUrl = "/dropbox/ready"
+      await launcher.prefetch({
+        controller: readyController,
+        bootstrapUrl: "/dropbox/ready",
+        button: readyButton
+      })
+      const prefetchAwaitsChooser = typeof globalThis.window.Dropbox?.choose === "function"
       chooseCalls.length = 0
       await launcher.launch({
         controller: readyController,
         providerKey: "dropbox",
         bootstrapUrl: "/dropbox/ready",
+        button: readyButton,
         gesture: true
       })
       const chooseOnReadyClick = chooseCalls.length === 1
+      const singleClickOpensChooser = chooseOnReadyClick
       const chooserSendsFilename = selectionNames.includes("kiln.jpg")
 
       let resolveBootstrap
       const coldController = controller()
+      const coldButton = pickerButton()
       coldController.fetchProviderBootstrap = () => new Promise((resolve) => {
         resolveBootstrap = () => resolve({ client_id: "app-key", provider_key: "dropbox" })
       })
       chooseCalls.length = 0
+      popupCalls.length = 0
       const coldLaunch = launcher.launch({
         controller: coldController,
         providerKey: "dropbox",
         bootstrapUrl: "/dropbox/cold",
-        button: element("button"),
+        button: coldButton,
         gesture: true
       })
       const chooseOnColdClick = chooseCalls.length
+      const popupOnColdClick = popupCalls.length
       resolveBootstrap()
       await coldLaunch
       await new Promise((resolve) => queueMicrotask(resolve))
@@ -212,7 +254,7 @@ class DropboxPickerLauncherTest < Minitest::Test
         controller: coldController,
         providerKey: "dropbox",
         bootstrapUrl: "/dropbox/cold",
-        button: element("button"),
+        button: coldButton,
         gesture: true
       })
       const chooseAfterNextClick = chooseCalls.length === 1
@@ -248,9 +290,7 @@ class DropboxPickerLauncherTest < Minitest::Test
         formPosts[0]?.fields?.authenticity_token === "csrf-token"
 
       const connectThenChooseController = controller()
-      const connectThenChooseButton = element("button")
-      connectThenChooseButton.dataset.providerKey = "dropbox"
-      connectThenChooseButton.dataset.providerLauncher = "dropbox"
+      const connectThenChooseButton = pickerButton()
       connectThenChooseButton.dataset.providerBootstrapUrl = "/dropbox/connect-then-choose"
       connectThenChooseController.providerButtonsByKey.set("dropbox", connectThenChooseButton)
       let connectThenChooseBootstraps = 0
@@ -359,9 +399,12 @@ class DropboxPickerLauncherTest < Minitest::Test
       const blockedPopupRejected = blockedPopupMessage === "The sign-in popup was blocked. Allow popups and try again."
 
       process.stdout.write(JSON.stringify({
+        singleClickOpensChooser,
         chooseOnReadyClick,
         chooserSendsFilename,
+        prefetchAwaitsChooser,
         chooseOnColdClick,
+        popupOnColdClick,
         chooseAfterNextClick,
         popupOnReadyAuthClick,
         postedOauthConnectIntoPopup,

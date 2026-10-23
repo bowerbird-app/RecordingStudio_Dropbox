@@ -11,6 +11,10 @@ const CHOOSER_SRC = "https://www.dropbox.com/static/api/2/dropins.js"
 const sessions = createBootstrapCache()
 let chooserPromise
 
+function chooserAppKeyFrom(button) {
+  return button?.dataset?.dropboxAppKey
+}
+
 function ensureChooserScript(appKey) {
   let script = document.querySelector(`script[src='${CHOOSER_SRC}']`)
   if (!script) {
@@ -18,15 +22,15 @@ function ensureChooserScript(appKey) {
     script.src = CHOOSER_SRC
     script.id = "dropboxjs"
     script.async = true
-    script.defer = true
-    script.setAttribute("data-app-key", appKey)
+    if (appKey) script.setAttribute("data-app-key", appKey)
     document.head.appendChild(script)
   } else if (appKey && !script.getAttribute("data-app-key")) {
     script.setAttribute("data-app-key", appKey)
   }
 }
 
-async function ensureDropboxChooserLoaded(appKey) {
+function ensureDropboxChooserLoaded(appKey) {
+  if (appKey) ensureChooserScript(appKey)
   if (!chooserPromise) {
     ensureChooserScript(appKey)
     chooserPromise = loadScript(CHOOSER_SRC).then(() => {
@@ -37,6 +41,13 @@ async function ensureDropboxChooserLoaded(appKey) {
   }
 
   return chooserPromise
+}
+
+function prefetchChooser(button) {
+  const appKey = chooserAppKeyFrom(button) || chooserAppKeyFrom(
+    document.querySelector("[data-provider-launcher='dropbox']")
+  )
+  if (appKey) ensureDropboxChooserLoaded(appKey)
 }
 
 function openChooser() {
@@ -69,8 +80,7 @@ function startSession(controller, bootstrapUrl) {
   return sessions.sessionFor(bootstrapUrl, async () => {
     const bootstrap = await controller.fetchProviderBootstrap(bootstrapUrl)
     if (bootstrap.client_id) {
-      const chooser = ensureDropboxChooserLoaded(bootstrap.client_id)
-      if (!providerNeedsAuth(bootstrap)) await chooser
+      await ensureDropboxChooserLoaded(bootstrap.client_id)
     }
     return bootstrap
   })
@@ -98,15 +108,32 @@ function openChooserNow(controller, providerKey) {
   return openChooser().then((selections) => applySelections(controller, providerKey, selections))
 }
 
-function openWithGesture(controller, providerKey, bootstrap) {
+function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
   if (providerNeedsAuth(bootstrap)) {
     csrfToken(controller, bootstrap)
     openProviderAuth(controller, bootstrap, providerKey)
+    sessions.forget(bootstrapUrl)
     return
   }
 
   return openChooserNow(controller, providerKey)
 }
+
+function waitForSession(controller, session, bootstrapUrl, button, announce) {
+  if (announce) controller.setProviderStatus("Dropbox is warming up…")
+
+  return session.promise.then(() => {
+    if (announce) controller.clearProviderStatus()
+    if (session.error) throw session.error
+    return null
+  }).catch((error) => {
+    sessions.forget(bootstrapUrl)
+    controller.handleProviderBootstrapError?.(error, button)
+    throw error
+  })
+}
+
+prefetchChooser()
 
 registerUploadProviderLauncher("dropbox", {
   forget(bootstrapUrl) {
@@ -116,27 +143,20 @@ registerUploadProviderLauncher("dropbox", {
   prefetch({ controller, bootstrapUrl, button }) {
     if (!controller || !bootstrapUrl) return Promise.resolve()
 
+    prefetchChooser(button)
     return startSession(controller, bootstrapUrl).promise.catch((error) => {
       sessions.forget(bootstrapUrl)
       controller.handleProviderBootstrapError?.(error, button, { announce: false })
     })
   },
 
-  async launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
+  launch({ controller, providerKey, bootstrapUrl, button, gesture = false }) {
+    prefetchChooser(button)
     const session = startSession(controller, bootstrapUrl)
     if (gesture && canOpenNow(session)) {
-      return openWithGesture(controller, providerKey, session.bootstrap)
+      return openWithGesture(controller, providerKey, session.bootstrap, bootstrapUrl)
     }
 
-    controller.setProviderStatus("Dropbox is warming up…")
-    try {
-      await session.promise
-    } catch (error) {
-      sessions.forget(bootstrapUrl)
-      controller.handleProviderBootstrapError?.(error, button)
-      throw error
-    }
-    if (session.error) throw session.error
-    controller.clearProviderStatus()
+    return waitForSession(controller, session, bootstrapUrl, button, gesture)
   }
 })
