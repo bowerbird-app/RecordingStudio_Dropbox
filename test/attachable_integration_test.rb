@@ -45,4 +45,21 @@ class AttachableIntegrationTest < Minitest::Test
     ids = selections.map { |row| row.fetch("id") }
     assert_equal %w[id:file-1 id:file-2], ids
   end
+
+  def test_remote_importer_is_keyword_only_and_accepts_context
+    error = assert_raises(ArgumentError) do
+      RecordingStudioDropbox::Attachable::Registration.remote_importer(
+        Object.new, [], nil, nil
+      )
+    end
+    assert_match(/missing keywords/, error.message)
+
+    result = RecordingStudioDropbox::Attachable::Registration.remote_importer(
+      parent_recording: Object.new,
+      attachments: [],
+      context: Object.new
+    )
+    refute result.success?
+    assert_includes result.error, "Select at least one"
+  end
 end

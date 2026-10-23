@@ -81,7 +81,7 @@ end
 
 `enabled` and `client_id` are this gem's settings. `client_id` is the Dropbox app key for Chooser. Dummy values such as `dummy-dropbox-client-id` are ignored. Routes stay at `/recording_studio_attachable/dropbox`.
 
-Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` only from a user click.
+Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` only from a user click. The file-list page uses Attachable's `providers/_remote_file_browser` for files and folders. Bootstrap `needs_auth` is the auth signal; `connect` is always the connect recipe.
 
 ## Errors
 
@@ -110,7 +110,7 @@ gem "recording_studio_oauth",
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
-    ref: "3d3dadc9072768dba4a5a993aefaddfbe85f4502"
+    ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"
 ```
 
 ```bash

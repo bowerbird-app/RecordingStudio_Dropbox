@@ -22,7 +22,6 @@ module RecordingStudioDropbox
           reconnect: reconnect,
           import_url: recording_imports_path(@recording, format: :json, **attachment_redirect_params)
         )
-        payload = payload.except(:connect) unless payload[:needs_auth]
         payload.merge(client_id: dropbox_configuration.client_id)
       end
 

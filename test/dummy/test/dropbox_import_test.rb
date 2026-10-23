@@ -71,8 +71,29 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "Brief.pdf"
+    assert_includes response.body, "application/pdf"
     assert_includes response.body, "Import selected"
     refute_includes response.body, "Connect Dropbox"
+    refute_includes response.body, "mimeType"
+  end
+
+  test "file-list page opens folders through the generic browser" do
+    follow_connect!
+
+    with_dropbox_client(listing_client) do
+      get dropbox_imports_path
+      assert_response :success
+      assert_includes response.body, "Briefs"
+      assert_includes response.body, "path=/Briefs"
+
+      get dropbox_imports_path(path: "/Briefs")
+    end
+
+    assert_response :success
+    assert_includes response.body, "Nested.pdf"
+    assert_includes response.body, "/Briefs"
+    assert_includes response.body, dropbox_imports_path
+    refute_includes response.body, "Brief.pdf"
   end
 
   test "connected import lists files and copies a selected file into storage" do
@@ -143,7 +164,10 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     payload = JSON.parse(response.body)
     assert_equal "test-dropbox-app-key", payload.fetch("client_id")
     assert_equal "dropbox", payload.fetch("provider_key")
-    refute payload.key?("connect")
+    refute payload.fetch("needs_auth")
+    assert payload.dig("connect", "url").present?
+    assert_equal oauth_outbound_connect_path, payload.dig("connect", "url")
+    assert payload.dig("connect", "fields", "authenticity_token").present?
     assert_nil payload["access_token"]
   end
 
@@ -229,9 +253,23 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
       tag: "file",
       size: 12
     )
+    dropbox_folder = RecordingStudioDropbox::Entry.new(
+      id: "id:folder-1",
+      name: "Briefs",
+      path: "/Briefs",
+      tag: "folder"
+    )
+    nested_file = RecordingStudioDropbox::Entry.new(
+      id: "id:file-2",
+      name: "Nested.pdf",
+      path: "/Briefs/Nested.pdf",
+      tag: "file",
+      size: 8
+    )
     client = Object.new
-    client.define_singleton_method(:list) do |**|
-      RecordingStudioDropbox::Page.new(entries: [dropbox_file], next_cursor: nil)
+    client.define_singleton_method(:list) do |path: "", **|
+      entries = path.to_s == "/Briefs" ? [nested_file] : [dropbox_folder, dropbox_file]
+      RecordingStudioDropbox::Page.new(entries: entries, next_cursor: nil)
     end
     client
   end
@@ -264,8 +302,11 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
     RecordingStudioOauth::Engine.routes.url_helpers.outbound_connect_path(provider: "dropbox")
   end
 
-  def dropbox_imports_path
-    "/recording_studio_attachable/dropbox/recordings/#{@root.id}/imports"
+  def dropbox_imports_path(path: nil)
+    url = "/recording_studio_attachable/dropbox/recordings/#{@root.id}/imports"
+    return url if path.blank?
+
+    "#{url}?#{ { path: path }.to_query }"
   end
 
   def dropbox_connect_path

@@ -59,8 +59,8 @@ GIT
 
 GIT
   remote: https://github.com/bowerbird-app/RecordingStudio_attachable.git
-  revision: 3d3dadc9072768dba4a5a993aefaddfbe85f4502
-  ref: 3d3dadc9072768dba4a5a993aefaddfbe85f4502
+  revision: 900cc3a169e26f0e4604e1acb3cbc1d81281aa87
+  ref: 900cc3a169e26f0e4604e1acb3cbc1d81281aa87
   specs:
     recording_studio_attachable (0.21.0)
       flat_pack (>= 0.1.213)

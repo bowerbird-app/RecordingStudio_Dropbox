@@ -36,8 +36,13 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes registration, "reconnect_error:"
     assert_includes registration, "connect:"
     refute_includes integration, "Adapter::ClientPicker"
+    refute_includes integration, "Adapter::Configurable"
     refute_includes integration, "register_adapter_configuration"
     refute_includes registration, "Adapter::ClientPicker"
+    refute_includes registration, "Adapter::Configurable"
+    assert_includes registration, "context:"
+    refute_includes registration, "**"
+    refute_includes bootstrap, "except(:connect)"
     assert_includes bootstrap, "provider_connect_payload"
     assert_includes launcher, 'from "recording_studio_attachable/provider_launchers"'
   end
@@ -128,7 +133,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes gemfile, 'tag: "v0.10.0"'
     refute_includes gemfile, 'tag: "v0.17.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_attachable"'
-    assert_includes gemfile, 'ref: "3d3dadc9072768dba4a5a993aefaddfbe85f4502"'
+    assert_includes gemfile, 'ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"'
     refute_includes gemfile, 'tag: "v0.15.0"'
     refute_includes gemfile, 'tag: "v0.10.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_root_switchable", tag: "v0.9.0"'

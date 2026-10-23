@@ -44,7 +44,8 @@ module RecordingStudioDropbox
         route_helpers.dropbox.recording_imports_path(recording, format: :json)
       end
 
-      def remote_importer(parent_recording:, attachments:, actor: nil, impersonator: nil, **)
+      def remote_importer(parent_recording:, attachments:, actor: nil, impersonator: nil, context: nil)
+        _ = context
         Import.remote_files(
           parent_recording: parent_recording,
           attachments: attachments,

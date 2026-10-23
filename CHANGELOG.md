@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Optional RecordingStudioAttachable add-on. When Attachable is loaded, this gem
   registers a Dropbox upload provider and mounts Chooser bootstrap, connect, and
-  the file-list import page at `/recording_studio_attachable/dropbox`.
+  the file-list import page at `/recording_studio_attachable/dropbox`. The file
+  list uses Attachable's generic remote file browser, including folders.
 - `RecordingStudioDropbox.configuration.enabled`, `client_id` (Chooser app key),
   and `page_size`.
 - Chooser launcher JavaScript, pinned as `recording_studio_dropbox/dropbox_picker_launcher`.
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade notes
 - Add `recording_studio_attachable` (`>= 0.21.0`, `< 1.0`). Until v0.21.0 is
-  tagged, pin git ref `3d3dadc9072768dba4a5a993aefaddfbe85f4502`. Run Attachable
+  tagged, pin git ref `900cc3a169e26f0e4604e1acb3cbc1d81281aa87`. Run Attachable
   install and migrations, and mount its engine.
 - Set `RecordingStudioDropbox.configuration.enabled = true` and
   `client_id` to the Dropbox app key used by Chooser. Dummy placeholder values

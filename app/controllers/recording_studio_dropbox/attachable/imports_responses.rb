@@ -69,7 +69,7 @@ module RecordingStudioDropbox
       end
 
       def render_listing_error(error)
-        @query = params[:query].to_s.strip
+        assign_listing_path
         @files = []
         @next_page_url = nil
         flash.now[:alert] = error.message
