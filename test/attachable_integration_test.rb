@@ -52,7 +52,7 @@ class AttachableIntegrationTest < Minitest::Test
         Object.new, [], nil, nil
       )
     end
-    assert_match(/missing keywords/, error.message)
+    assert_match(/required keywords: parent_recording, attachments/, error.message)
 
     result = RecordingStudioDropbox::Attachable::Registration.remote_importer(
       parent_recording: Object.new,
