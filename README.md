@@ -44,7 +44,7 @@ Register the Dropbox provider from this gem, not from Oauth:
 RecordingStudioDropbox.register_oauth_provider
 ```
 
-That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`.
+That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`. If both Oauth `client_id` and `client_secret` are blank, the call skips registration so a generated initializer can boot before credentials exist. It does not rescue other Oauth errors.
 
 Set these credential keys (never commit the values):
 
@@ -119,7 +119,7 @@ gem "recording_studio_oauth",
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
-    ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"
+    tag: "v0.21.0"
 ```
 
 ```bash

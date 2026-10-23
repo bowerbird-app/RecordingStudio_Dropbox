@@ -29,14 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade notes
 - Attachable is optional. If you want Chooser and the file-list import page,
-  add `recording_studio_attachable` (`>= 0.21.0`, `< 1.0`). Until v0.21.0 is
-  tagged, pin git ref `900cc3a169e26f0e4604e1acb3cbc1d81281aa87`. Run Attachable
+  add `recording_studio_attachable` (`>= 0.21.0`, `< 1.0`). Run Attachable
   install and migrations, and mount its engine.
 - Set `RecordingStudioDropbox.configuration.enabled = true` and
   `client_id` to the Dropbox app key used by Chooser. Dummy placeholder values
   such as `dummy-dropbox-client-id` do not count.
 - Oauth still uses `credentials.recording_studio_oauth.outbound.dropbox.client_id`
   and `client_secret`. The Chooser app key is `configuration.client_id`.
+  `register_oauth_provider` skips only when both Oauth credentials are blank.
+  Other Oauth registration errors still raise.
 - If you upload into Dropbox with `Client#upload_file`, set
   `RecordingStudioDropbox.configuration.scopes` (or pass `scopes:` to
   `register_oauth_provider`) so they include `files.content.write`.

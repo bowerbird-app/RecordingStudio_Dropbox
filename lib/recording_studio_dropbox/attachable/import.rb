@@ -84,7 +84,7 @@ module RecordingStudioDropbox
           io: StringIO.new(downloaded.body),
           filename: downloaded.filename.presence || filename,
           content_type: downloaded.content_type.presence || Marcel::MimeType.for(name: filename),
-          byte_size: byte_size
+          byte_size: downloaded.body.bytesize
         }
       end
 

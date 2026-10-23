@@ -61,4 +61,90 @@ class OauthProviderTest < Minitest::Test
   ensure
     RecordingStudioDropbox.configuration.scopes = original
   end
+
+  def test_register_oauth_provider_skips_when_both_credentials_are_blank
+    registered = false
+
+    with_blank_oauth_credentials do
+      RecordingStudioOauth.stub(:register_outbound_provider, ->(**) { registered = true }) do
+        RecordingStudioDropbox.register_oauth_provider
+      end
+    end
+
+    refute registered
+  end
+
+  def test_register_oauth_provider_registers_when_credentials_are_in_rails
+    captured = nil
+    app = Object.new
+    app.define_singleton_method(:credentials) do
+      {
+        recording_studio_oauth: {
+          outbound: { dropbox: { client_id: "from-rails", client_secret: "from-rails-secret" } }
+        }
+      }
+    end
+    app.define_singleton_method(:respond_to?) { |name, *| name == :credentials || super(name) }
+
+    Rails.stub(:application, app) do
+      RecordingStudioOauth.stub(:register_outbound_provider, ->(**attrs) { captured = attrs }) do
+        RecordingStudioDropbox.register_oauth_provider
+      end
+    end
+
+    assert_equal :dropbox, captured[:key]
+  end
+
+  def test_register_oauth_provider_registers_when_credentials_are_present
+    captured = nil
+
+    RecordingStudioOauth.stub(:register_outbound_provider, ->(**attrs) { captured = attrs }) do
+      RecordingStudioDropbox.register_oauth_provider(
+        client_id: "id",
+        client_secret: SECRET
+      )
+    end
+
+    assert_equal :dropbox, captured[:key]
+    assert_equal "id", captured[:client_id]
+    assert_equal SECRET, captured[:client_secret]
+  end
+
+  def test_register_oauth_provider_does_not_swallow_oauth_errors
+    error = assert_raises(ArgumentError) do
+      RecordingStudioOauth.stub(
+        :register_outbound_provider,
+        ->(**) { raise ArgumentError, "authorize_url is required" }
+      ) do
+        RecordingStudioDropbox.register_oauth_provider(
+          client_id: "id",
+          client_secret: SECRET
+        )
+      end
+    end
+
+    assert_equal "authorize_url is required", error.message
+  end
+
+  def test_generated_initializer_calls_register_oauth_provider
+    source = File.read(
+      File.expand_path(
+        "../lib/generators/recording_studio_dropbox/install/templates/recording_studio_dropbox_initializer.rb",
+        __dir__
+      )
+    )
+
+    assert_includes source, "RecordingStudioDropbox.register_oauth_provider"
+    refute_includes source, "rescue"
+  end
+
+  private
+
+  def with_blank_oauth_credentials(&)
+    app = Object.new
+    app.define_singleton_method(:credentials) { {} }
+    app.define_singleton_method(:respond_to?) { |name, *| name == :credentials || super(name) }
+
+    Rails.stub(:application, app, &)
+  end
 end

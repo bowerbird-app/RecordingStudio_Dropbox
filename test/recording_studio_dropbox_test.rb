@@ -305,6 +305,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "RecordingStudioDropbox::Client"
     assert_includes readme, "OauthToken"
     assert_includes readme, "connection_for"
+    assert_includes readme, "both Oauth `client_id` and `client_secret` are blank"
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_id"
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_secret"
     assert_includes readme, "ReconnectRequired"
@@ -315,6 +316,8 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
+    assert_includes readme, 'tag: "v0.21.0"'
+    refute_includes readme, "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"
     refute_includes readme, "Planned Attachable wiring"
     refute_includes readme, "Dummy credentials"
     refute_includes readme, "Template Demo"

@@ -8,13 +8,15 @@ module RecordingStudioDropbox
     end
 
     def append(chunk)
-      @buffer << chunk
-      return unless @buffer.bytesize > @limit
+      incoming = chunk.to_s
+      if (@buffer.bytesize + incoming.bytesize) > @limit
+        raise ArgumentError, I18n.t(
+          "recording_studio_dropbox.file_too_large",
+          default: "That Dropbox file is over the size limit"
+        )
+      end
 
-      raise ArgumentError, I18n.t(
-        "recording_studio_dropbox.file_too_large",
-        default: "That Dropbox file is over the size limit"
-      )
+      @buffer << incoming
     end
 
     def to_s

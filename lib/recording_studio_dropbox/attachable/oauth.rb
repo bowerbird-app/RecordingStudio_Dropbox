@@ -12,25 +12,25 @@ module RecordingStudioDropbox
       end
 
       def connection_status(root:, actor:)
-        return :connected if connection(root: root, actor: actor)
+        return unless defined?(::RecordingStudioOauth)
+        return oauth_connection_status(root, actor) if ::RecordingStudioOauth.respond_to?(:connection_status)
 
-        row = live_connection(actor: actor)
-        return :missing if row.nil?
-        return :needs_reconnect if row.needs_reconnect?
-
-        :connected
+        connection(root: root, actor: actor) ? :connected : :missing
       end
 
       def connection_id_for(root:, actor:)
-        live_connection(actor: actor)&.id || connection(root: root, actor: actor)&.id
+        return unless defined?(::RecordingStudioOauth)
+        return oauth_connection_id(root, actor) if ::RecordingStudioOauth.respond_to?(:connection_id_for)
+
+        connection(root: root, actor: actor)&.id
       end
 
-      def live_connection(actor:)
-        return unless defined?(::RecordingStudioOauth::OutboundConnection)
+      def oauth_connection_status(root, actor)
+        ::RecordingStudioOauth.connection_status(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
+      end
 
-        ::RecordingStudioOauth::OutboundConnection.live.for_provider(Registration::PROVIDER_KEY).find_by(
-          owner_actor: actor
-        )
+      def oauth_connection_id(root, actor)
+        ::RecordingStudioOauth.connection_id_for(provider: Registration::PROVIDER_KEY, root: root, actor: actor)
       end
 
       def oauth_connect_path

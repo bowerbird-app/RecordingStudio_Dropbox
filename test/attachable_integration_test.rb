@@ -3,6 +3,7 @@
 require "test_helper"
 require "recording_studio_dropbox/attachable/registration"
 require "recording_studio_dropbox/attachable/import"
+require "recording_studio_dropbox/attachable/oauth"
 
 class AttachableIntegrationTest < Minitest::Test
   def test_reconnect_required_maps_dropbox_and_attachable_errors
@@ -93,5 +94,55 @@ class AttachableIntegrationTest < Minitest::Test
     refute downloaded
     refute result.success?
     assert_includes result.error, "size limit"
+  end
+
+  def test_import_download_uses_downloaded_body_size_when_metadata_is_smaller
+    body = "actual-file-bytes"
+    metadata_size = 3
+    downloaded = RecordingStudioDropbox::DownloadedFile.new(
+      body: body,
+      filename: "Brief.pdf",
+      content_type: "application/pdf"
+    )
+    client = Object.new
+    client.define_singleton_method(:fetch_file) do |**|
+      RecordingStudioDropbox::Entry.new(
+        id: "id:file-1",
+        name: "Brief.pdf",
+        path: "/Brief.pdf",
+        tag: "file",
+        size: metadata_size
+      )
+    end
+    client.define_singleton_method(:download) do |**|
+      downloaded
+    end
+
+    payload = RecordingStudioDropbox::Attachable::Import.stub(:attachable_max_file_size, 1_000_000) do
+      RecordingStudioDropbox::Attachable::Registration.stub(:client, ->(**) { client }) do
+        RecordingStudioDropbox::Attachable::Import.payload_for(
+          Object.new,
+          Object.new,
+          { "id" => "id:file-1", "name" => "Brief.pdf" }
+        )
+      end
+    end
+
+    result = payload.fetch(:download).call
+
+    assert_equal metadata_size, payload.fetch(:byte_size)
+    assert_equal body.bytesize, result.fetch(:byte_size)
+    refute_equal metadata_size, result.fetch(:byte_size)
+  end
+
+  def test_attachable_oauth_does_not_query_outbound_connection_rows
+    source = File.read(
+      File.expand_path("../lib/recording_studio_dropbox/attachable/oauth.rb", __dir__)
+    )
+
+    refute_includes source, "OutboundConnection"
+    refute_includes source, "live_connection"
+    assert_includes source, "connection_for"
+    assert_includes source, "connection_status"
   end
 end
