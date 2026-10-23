@@ -11,7 +11,6 @@ import {
 
 const CHOOSER_SRC = "https://www.dropbox.com/static/api/2/dropins.js"
 const sessions = createBootstrapCache()
-const pendingConnects = new WeakMap()
 let chooserPromise
 
 function chooserAppKeyFrom(button) {
@@ -97,28 +96,6 @@ function canOpenNow(session) {
   return Boolean(window.Dropbox?.choose)
 }
 
-function pendingUrlsFor(controller) {
-  let urls = pendingConnects.get(controller)
-  if (!urls) {
-    urls = new Set()
-    pendingConnects.set(controller, urls)
-  }
-  return urls
-}
-
-function markPendingConnect(controller, bootstrapUrl) {
-  if (!controller || !bootstrapUrl) return
-
-  pendingUrlsFor(controller).add(bootstrapUrl)
-}
-
-function consumePendingConnect(controller, bootstrapUrl) {
-  const urls = pendingConnects.get(controller)
-  if (!urls?.delete(bootstrapUrl)) return false
-
-  return true
-}
-
 async function applySelections(controller, providerKey, selections) {
   if (selections.length === 0) {
     controller.clearProviderStatus()
@@ -138,9 +115,7 @@ function openChooserNow(controller, providerKey) {
 function openWithGesture(controller, providerKey, bootstrap, bootstrapUrl) {
   if (providerNeedsAuth(bootstrap)) {
     csrfToken(controller, bootstrap)
-    if (openProviderAuth(controller, bootstrap, providerKey)) {
-      markPendingConnect(controller, bootstrapUrl)
-    }
+    openProviderAuth(controller, bootstrap, providerKey)
     return
   }
 
@@ -162,7 +137,6 @@ function waitForSession(controller, session, bootstrapUrl, button) {
 }
 
 function continueAfterAuth(controller, providerKey, bootstrapUrl, button, session) {
-  consumePendingConnect(controller, bootstrapUrl)
   if (providerNeedsAuth(session.bootstrap)) return
 
   showProviderContinueButton(controller, button, "Open Dropbox", () => {

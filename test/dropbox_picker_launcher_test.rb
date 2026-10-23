@@ -17,8 +17,6 @@ class DropboxPickerLauncherTest < Minitest::Test
     assert_includes launcher_source, "csrfToken"
     assert_includes launcher_source, "showProviderContinueButton"
     assert_includes launcher_source, "hideProviderContinueButton"
-    assert_includes launcher_source, "markPendingConnect"
-    assert_includes launcher_source, "consumePendingConnect"
     assert_includes launcher_source, "if (gesture && canOpenNow(session))"
     assert_includes launcher_source, "window.Dropbox.choose"
     assert_includes launcher_source, "dropboxAppKey"
