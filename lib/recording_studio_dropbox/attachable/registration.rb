@@ -75,7 +75,8 @@ module RecordingStudioDropbox
         token = context.provider_csrf_token if context.respond_to?(:provider_csrf_token)
         {
           authenticity_token: token,
-          owner: "user",
+          owner: "root",
+          root_recording_id: root_for(recording)&.id,
           return_to: helpers.recording_connected_path(recording, popup: 1)
         }.compact
       end

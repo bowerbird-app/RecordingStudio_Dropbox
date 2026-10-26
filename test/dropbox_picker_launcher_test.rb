@@ -226,7 +226,8 @@ class DropboxPickerLauncherTest < Minitest::Test
           method: "post",
           fields: {
             authenticity_token: "csrf-token",
-            owner: "user",
+            owner: "root",
+            root_recording_id: "rec-1",
             return_to: "/dropbox/recordings/rec-1/connected?popup=1"
           }
         }
@@ -243,7 +244,8 @@ class DropboxPickerLauncherTest < Minitest::Test
       const popupOnReadyAuthClick = popupCalls[0] === "about:blank"
       const postedOauthConnectIntoPopup = formPosts[0]?.action === "/recording_studio_oauth/outbound/dropbox/connect" &&
         formPosts[0]?.target === "dropbox-auth" &&
-        formPosts[0]?.fields?.owner === "user" &&
+        formPosts[0]?.fields?.owner === "root" &&
+        formPosts[0]?.fields?.root_recording_id === "rec-1" &&
         formPosts[0]?.fields?.return_to?.includes("/dropbox/recordings/rec-1/connected") &&
         formPosts[0]?.fields?.authenticity_token === "csrf-token"
 
@@ -265,7 +267,8 @@ class DropboxPickerLauncherTest < Minitest::Test
               method: "post",
               fields: {
                 authenticity_token: "csrf-token",
-                owner: "user",
+                owner: "root",
+                root_recording_id: "rec-1",
                 return_to: "/dropbox/recordings/rec-1/connected?popup=1"
               }
             }

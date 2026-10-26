@@ -29,5 +29,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", "~> 8.1.0"
   spec.add_dependency "recording_studio", "~> 4.2"
-  spec.add_dependency "recording_studio_oauth", ">= 0.15.0", "< 1.0"
+  spec.add_dependency "recording_studio_oauth", ">= 0.17.0", "< 1.0"
 end

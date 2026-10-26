@@ -2,7 +2,7 @@
 
 This gem talks to the Dropbox HTTP API for Recording Studio. It lists folders, fetches metadata, downloads files, and uploads files. Files are copied into storage later. This gem does not link Dropbox files in place.
 
-Dropbox uses user OAuth. Tokens live on RecordingStudioOauth outbound connections. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page.
+Dropbox is a root plugin. A workspace admin connects it once for the workspace. Tokens live on RecordingStudioOauth outbound connections. The host registers the provider with `RecordingStudioDropbox.register_oauth_provider`. That call always sends `kind: :root`. A host cannot override it to `:user`. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page.
 
 ## What you get
 
@@ -38,13 +38,13 @@ This client uses the same method names as RecordingStudio Google Drive: `list`, 
 
 ## Oauth tokens
 
-Register the Dropbox provider from this gem, not from Oauth:
+Register the Dropbox provider from this gem, not from Oauth. Put this in the host initializer:
 
 ```ruby
 RecordingStudioDropbox.register_oauth_provider
 ```
 
-That call uses Oauth's public registry. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`. If both Oauth `client_id` and `client_secret` are blank, the call skips registration so a generated initializer can boot before credentials exist. It does not rescue other Oauth errors.
+That call uses Oauth's public registry with `kind: :root`. Authorize and token URLs are Dropbox's. Refresh is on. `token_access_type` is `offline`. If both Oauth `client_id` and `client_secret` are blank, the call skips registration so a generated initializer can boot before credentials exist. It does not rescue other Oauth errors.
 
 Set these credential keys (never commit the values):
 
@@ -111,11 +111,11 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.3.1"
+    tag: "v0.4.0"
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.15.1"
+    tag: "v0.17.0"
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
@@ -160,4 +160,4 @@ Seeds print that path.
 
 ## Version
 
-0.3.1
+0.4.0

@@ -17,6 +17,7 @@ class OauthProviderTest < Minitest::Test
     )
 
     assert_equal "dropbox", provider.key
+    assert_equal :root, provider.kind
     assert_equal RecordingStudioDropbox::OauthProvider::AUTHORIZE_URL, provider.authorize_url
     assert_equal RecordingStudioDropbox::OauthProvider::TOKEN_URL, provider.token_url
     assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, provider.scopes
@@ -25,6 +26,19 @@ class OauthProviderTest < Minitest::Test
     assert provider.pkce?
     assert_equal "offline", provider.extra_authorize_params["token_access_type"]
     refute_includes provider.inspect, SECRET
+    assert_includes RecordingStudioOauth.outbound_providers, { key: "dropbox", kind: :root }
+  end
+
+  def test_register_oauth_provider_ignores_a_host_kind_override
+    provider = RecordingStudioDropbox.register_oauth_provider(
+      kind: :user,
+      client_id: "id",
+      client_secret: SECRET,
+      http: ->(_url, _params) { [200, {}] }
+    )
+
+    assert_equal :root, provider.kind
+    assert_includes RecordingStudioOauth.outbound_providers, { key: "dropbox", kind: :root }
   end
 
   def test_register_oauth_provider_allows_a_test_http_stub
@@ -113,6 +127,7 @@ class OauthProviderTest < Minitest::Test
     end
 
     assert_equal :dropbox, captured[:key]
+    assert_equal :root, captured[:kind]
   end
 
   def test_register_oauth_provider_registers_when_credentials_are_present
@@ -120,12 +135,14 @@ class OauthProviderTest < Minitest::Test
 
     RecordingStudioOauth.stub(:register_outbound_provider, ->(**attrs) { captured = attrs }) do
       RecordingStudioDropbox.register_oauth_provider(
+        kind: :user,
         client_id: "id",
         client_secret: SECRET
       )
     end
 
     assert_equal :dropbox, captured[:key]
+    assert_equal :root, captured[:kind]
     assert_equal "id", captured[:client_id]
     assert_equal SECRET, captured[:client_secret]
   end

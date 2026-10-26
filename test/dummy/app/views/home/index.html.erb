@@ -17,7 +17,8 @@
   <div class="flex flex-wrap gap-3">
     <% if @dropbox_connection.nil? %>
       <%= form_with url: recording_studio_oauth.outbound_connect_path(provider: "dropbox"), method: :post do %>
-        <%= hidden_field_tag :owner, "user" %>
+        <%= hidden_field_tag :owner, "root" %>
+        <%= hidden_field_tag :root_recording_id, @root_recording.id if @root_recording %>
         <%= hidden_field_tag :return_to, root_path %>
         <%= render FlatPack::Button::Component.new(
           text: "Connect Dropbox",
@@ -28,7 +29,8 @@
       <% end %>
     <% elsif @dropbox_connection.needs_reconnect? %>
       <%= form_with url: recording_studio_oauth.outbound_connect_path(provider: "dropbox"), method: :post do %>
-        <%= hidden_field_tag :owner, "user" %>
+        <%= hidden_field_tag :owner, "root" %>
+        <%= hidden_field_tag :root_recording_id, @root_recording.id if @root_recording %>
         <%= hidden_field_tag :return_to, root_path %>
         <%= render FlatPack::Button::Component.new(
           text: "Reconnect Dropbox",

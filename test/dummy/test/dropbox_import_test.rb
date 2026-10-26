@@ -271,7 +271,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
 
   private
 
-  def follow_connect!(owner: "user", root_recording_id: nil, return_to: dropbox_imports_path)
+  def follow_connect!(owner: "root", root_recording_id: @root.id, return_to: dropbox_imports_path)
     get dropbox_imports_path
     assert_response :success
     post oauth_outbound_connect_path, params: {

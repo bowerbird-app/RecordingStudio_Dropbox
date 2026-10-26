@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.3.1", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.4.0", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -51,7 +51,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
 
     assert_includes gemspec, 'spec.add_dependency "recording_studio", "~> 4.2"'
-    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.15.0", "< 1.0"'
+    assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.17.0", "< 1.0"'
     refute_includes gemspec, 'spec.add_dependency "recording_studio_attachable"'
   end
 
@@ -132,7 +132,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.18.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_trashable", tag: "v0.11.0", require: false'
     refute_includes gemfile, 'tag: "v0.10.0"'
-    refute_includes gemfile, 'tag: "v0.17.0"'
+    refute_includes gemfile, 'tag: "v0.15.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_attachable"'
     assert_includes gemfile, 'tag: "v0.21.1"'
     refute_includes gemfile, 'ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"'
@@ -143,7 +143,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes gemfile, 'tag: "v0.6.0"'
     refute_includes gemfile, 'tag: "v0.5.1"'
     assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.213"'
-    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.15.1"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.17.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.6.1"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_api", tag: "v0.16.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.0"'
@@ -329,6 +329,9 @@ class RecordingStudioDropboxTest < Minitest::Test
 
     assert_includes readme, "RecordingStudioDropbox::Client"
     assert_includes readme, "OauthToken"
+    assert_includes readme, "root plugin"
+    assert_includes readme, "RecordingStudioDropbox.register_oauth_provider"
+    assert_includes readme, "kind: :root"
     assert_includes readme, "connection_for"
     assert_includes readme, "both Oauth `client_id` and `client_secret` are blank"
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_id"

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-26
+
+### Changed
+- **BREAKING.** `RecordingStudioDropbox.register_oauth_provider` always registers
+  the Dropbox outbound provider with `kind: :root`. Passing `kind: :user` does
+  not change that.
+- RecordingStudioOauth is now `>= 0.17.0`, `< 1.0`. Pin git tag `v0.17.0`.
+
+### Upgrade notes
+- Bump to `0.4.0`. No Dropbox migration. Pin git tag `v0.4.0`.
+- Pin Oauth git tag `v0.17.0`. Oauth 0.17.0 requires `kind:` on every outbound
+  provider. This gem supplies `:root`. Connect with `owner=root` and the
+  workspace `root_recording_id`. Root Connect needs the workspace admin role.
+  Non-admin uploaders can no longer connect Dropbox themselves.
+- **BREAKING.** Existing personal (`owner=user`) Dropbox connections no longer
+  work after Oauth 0.17.0. A workspace admin must reconnect Dropbox for the
+  workspace. Personal Connect (`owner=user`) is not valid for Dropbox.
+
 ## [0.3.1] - 2026-10-26
 
 ### Changed
@@ -110,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.4.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.0
 [0.3.1]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.3.1
 [0.3.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.2.0

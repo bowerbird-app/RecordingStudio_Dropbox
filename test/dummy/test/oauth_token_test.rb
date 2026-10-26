@@ -19,6 +19,7 @@ class OauthTokenTest < ActiveSupport::TestCase
     Current.actor = @user
     workspace = Workspace.create!(name: "Token Workspace #{SecureRandom.hex(4)}")
     @root = RecordingStudio.root_recording_for(workspace)
+    grant_workspace_access!(@root)
   end
 
   teardown do
@@ -27,7 +28,7 @@ class OauthTokenTest < ActiveSupport::TestCase
   end
 
   test "token found through connection_for" do
-    create_user_connection!(access_token: SECRET_TOKEN, refresh_token: "live-refresh")
+    create_root_connection!(access_token: SECRET_TOKEN, refresh_token: "live-refresh")
 
     token = RecordingStudioDropbox::OauthToken.new(root: @root, actor: @user).call
 
@@ -35,7 +36,7 @@ class OauthTokenTest < ActiveSupport::TestCase
   end
 
   test "expired token is refreshed through oauth" do
-    create_user_connection!(
+    create_root_connection!(
       access_token: SECRET_TOKEN,
       refresh_token: "live-refresh",
       expires_at: 1.minute.ago
@@ -57,7 +58,7 @@ class OauthTokenTest < ActiveSupport::TestCase
   end
 
   test "revoked connection raises ReconnectRequired" do
-    create_user_connection!(
+    create_root_connection!(
       access_token: SECRET_TOKEN,
       refresh_token: "live-refresh",
       status: "revoked"
@@ -72,7 +73,7 @@ class OauthTokenTest < ActiveSupport::TestCase
   end
 
   test "refresh failure raises ReconnectRequired" do
-    create_user_connection!(
+    create_root_connection!(
       access_token: SECRET_TOKEN,
       refresh_token: FakeDropboxOauth::FAIL_REFRESH,
       expires_at: 1.minute.ago
@@ -89,10 +90,10 @@ class OauthTokenTest < ActiveSupport::TestCase
 
   private
 
-  def create_user_connection!(access_token:, refresh_token:, expires_at: 1.hour.from_now, status: "active")
+  def create_root_connection!(access_token:, refresh_token:, expires_at: 1.hour.from_now, status: "active")
     RecordingStudioOauth::OutboundConnection.create!(
       provider_key: RecordingStudioDropbox::OauthProvider::KEY.to_s,
-      owner_actor: @user,
+      root_recording: @root,
       connected_by: @user,
       access_token: access_token,
       refresh_token: refresh_token,
@@ -100,5 +101,19 @@ class OauthTokenTest < ActiveSupport::TestCase
       expires_at: expires_at,
       granted_scopes: RecordingStudioDropbox::Client::SCOPES
     )
+  end
+
+  def grant_workspace_access!(root, actor: @user, role: :admin)
+    original = RecordingStudioAccessible.configuration.access_management_authorizer
+    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
+    result = RecordingStudioAccessible.grant_access(
+      recording: root,
+      actor: actor,
+      role: role,
+      manager_actor: @user
+    )
+    raise result.error if result.failure?
+  ensure
+    RecordingStudioAccessible.configuration.access_management_authorizer = original
   end
 end

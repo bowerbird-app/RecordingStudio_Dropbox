@@ -14,7 +14,7 @@ module RecordingStudioDropbox
     def register!(**overrides)
       return if credentials_blank?(overrides)
 
-      RecordingStudioOauth.register_outbound_provider(**defaults, **overrides)
+      RecordingStudioOauth.register_outbound_provider(**defaults, **overrides, kind: :root)
     end
 
     def defaults
