@@ -9,16 +9,24 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
 
   setup do
     FakeDropboxOauth.reset!
-    @user = User.create!(
-      email: "dropbox-oauth-#{SecureRandom.hex(4)}@example.com",
-      password: "Password123!",
-      password_confirmation: "Password123!"
-    )
+    @user = User.find_by(email: "admin@admin.com")
+    if @user.blank?
+      @user = User.new(
+        email: "admin@admin.com",
+        password: "Password",
+        password_confirmation: "Password"
+      )
+      @user.save!
+    end
     sign_in @user
+    @workspace = Workspace.find_by(name: "Studio Workspace") || Workspace.find_or_create_by!(name: "Studio Workspace")
+    Current.actor = @user
+    @root = RecordingStudio.root_recording_for(@workspace)
+    grant_workspace_access!(@root)
   end
 
   teardown do
-    Current.actor = nil
+    Current.actor = nil if defined?(Current)
     FakeDropboxOauth.reset!
   end
 
@@ -32,15 +40,16 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     refute_includes response.body, "Disconnect"
   end
 
-  test "connect stores a user connection and home shows disconnect" do
+  test "connect stores a workspace connection and home shows disconnect" do
     logs = capture_logs { follow_connect! }
 
     connection = RecordingStudioOauth::OutboundConnection.find_by!(
       provider_key: "dropbox",
-      owner_actor: @user
+      root_recording_id: @root.id
     )
     assert_equal "active", connection.status
-    assert connection.user_owned?
+    assert connection.root_owned?
+    refute connection.user_owned?
     assert connection.access_token.present?
     refute_includes connection.inspect, connection.access_token
     refute_includes logs, connection.access_token
@@ -56,7 +65,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
 
   test "disconnect removes the connection and home shows connect again" do
     follow_connect!
-    connection = RecordingStudioOauth::OutboundConnection.find_by!(owner_actor: @user)
+    connection = live_dropbox_connection
 
     delete recording_studio_oauth.outbound_connection_path(connection), params: { return_to: "/" }
     assert_redirected_to "/"
@@ -69,7 +78,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
 
   test "home shows reconnect when Dropbox needs another look-in" do
     follow_connect!
-    connection = RecordingStudioOauth::OutboundConnection.find_by!(owner_actor: @user)
+    connection = live_dropbox_connection
     connection.update_columns(status: "needs_reconnect", updated_at: Time.current)
 
     visit_home!
@@ -81,7 +90,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
 
   test "reconnect through oauth restores an active connection" do
     follow_connect!
-    connection = RecordingStudioOauth::OutboundConnection.find_by!(owner_actor: @user)
+    connection = live_dropbox_connection
     connection.update_columns(status: "needs_reconnect", updated_at: Time.current)
 
     follow_connect!
@@ -99,9 +108,17 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     get "/"
   end
 
+  def live_dropbox_connection
+    RecordingStudioOauth::OutboundConnection.find_by!(
+      provider_key: "dropbox",
+      root_recording_id: @root.id
+    )
+  end
+
   def follow_connect!
     post recording_studio_oauth.outbound_connect_path(provider: "dropbox"), params: {
-      owner: "user",
+      owner: "root",
+      root_recording_id: @root.id,
       return_to: "/"
     }
     assert_response :redirect
@@ -109,6 +126,20 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     follow_redirect!
     assert_response :redirect
+  end
+
+  def grant_workspace_access!(root, actor: @user, role: :admin)
+    original = RecordingStudioAccessible.configuration.access_management_authorizer
+    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
+    result = RecordingStudioAccessible.grant_access(
+      recording: root,
+      actor: actor,
+      role: role,
+      manager_actor: @user
+    )
+    raise result.error if result.failure?
+  ensure
+    RecordingStudioAccessible.configuration.access_management_authorizer = original
   end
 
   def capture_logs
