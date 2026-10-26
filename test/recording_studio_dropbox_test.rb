@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.3.0", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.3.1", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -102,10 +102,11 @@ class RecordingStudioDropboxTest < Minitest::Test
 
     initializer = File.read(File.join(dummy_root, "config/initializers/recording_studio_dropbox.rb"))
     assert_includes initializer, "Rails.application.credentials"
-    assert_includes initializer, "DROPBOX_CLIENT_ID"
-    assert_includes initializer, "DROPBOX_CLIENT_SECRET"
-    assert_includes initializer, ":attachable"
-    refute_includes initializer, "Rails.application.credentials.recording_studio_oauth"
+    assert_includes initializer, "dig(:recording_studio_oauth, :outbound, :dropbox)"
+    refute_includes initializer, "DROPBOX_CLIENT_ID"
+    refute_includes initializer, "DROPBOX_CLIENT_SECRET"
+    refute_includes initializer, ":attachable"
+    refute_includes initializer, "creds[:dropbox]"
 
     Dir.glob("#{dummy_root}/**/*.{rb,yml,erb}").each do |path|
       next if path.end_with?("config/initializers/recording_studio_dropbox.rb")
@@ -133,7 +134,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes gemfile, 'tag: "v0.10.0"'
     refute_includes gemfile, 'tag: "v0.17.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_attachable"'
-    assert_includes gemfile, 'tag: "v0.21.0"'
+    assert_includes gemfile, 'tag: "v0.21.1"'
     refute_includes gemfile, 'ref: "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"'
     refute_includes gemfile, 'tag: "v0.15.0"'
     refute_includes gemfile, 'tag: "v0.10.1"'
@@ -143,7 +144,9 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes gemfile, 'tag: "v0.5.1"'
     assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.213"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.15.1"'
-    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.5.0"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.6.1"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_api", tag: "v0.16.0"'
+    assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_logs", tag: "v0.7.0"'
     refute_includes gemfile, "recording_studio/v3.0.0"
     refute_includes gemfile, 'tag: "v4.4.0"'
     refute_includes gemfile, 'tag: "v4.3.0"'
@@ -210,6 +213,26 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute File.exist?(File.expand_path("../lib/recording_studio_dropbox/hooks.rb", __dir__))
     refute File.exist?(File.expand_path("../lib/recording_studio_dropbox/services/base_service.rb", __dir__))
     refute File.exist?(File.expand_path("../lib/recording_studio_dropbox/services/example_service.rb", __dir__))
+    refute File.exist?(
+      File.expand_path("../lib/generators/recording_studio_dropbox/migrations/migrations_generator.rb", __dir__)
+    )
+    refute File.exist?(
+      File.expand_path("../lib/generators/recording_studio_dropbox/install/INSTALL.md", __dir__)
+    )
+    refute File.exist?(
+      File.expand_path("../app/controllers/recording_studio_dropbox/application_controller.rb", __dir__)
+    )
+    refute File.exist?(File.expand_path("dummy/app/javascript/controllers/hello_controller.js", __dir__))
+    refute File.exist?(File.expand_path("dummy/.github/workflows/ci.yml", __dir__))
+    refute File.exist?(File.expand_path("dummy/.github/dependabot.yml", __dir__))
+    refute File.exist?(File.expand_path("dummy/install_page.html", __dir__))
+    refute File.exist?(File.expand_path("dummy/app/views/makeup_artist/custom_examples/.keep", __dir__))
+    refute File.exist?(File.expand_path("dummy/app/models/concerns/.keep", __dir__))
+    refute File.exist?(File.expand_path("dummy/script/.keep", __dir__))
+    refute File.exist?(File.expand_path("dummy/vendor/.keep", __dir__))
+    refute File.exist?(File.expand_path("dummy/vendor/javascript/.keep", __dir__))
+    refute File.exist?(File.expand_path("dummy/app/controllers/concerns/.keep", __dir__))
+    refute Dir.exist?(File.expand_path("../.github/agents", __dir__))
   end
 
   def test_example_capability_is_not_shipped
@@ -295,7 +318,9 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme_source, "redirects to `/`"
     assert_includes readme_source, "fake Dropbox provider"
     assert_includes readme_source, "/attachments/upload"
-    assert_includes readme_source, "DROPBOX_CLIENT_ID"
+    assert_includes readme_source, "recording_studio_oauth.outbound.dropbox"
+    refute_includes readme_source, "DROPBOX_CLIENT_ID"
+    refute_includes readme_source, "attachable.dropbox"
     refute_includes readme_source, "flat_pack_sidebar"
   end
 

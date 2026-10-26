@@ -93,10 +93,7 @@ module RecordingStudioDropbox
         return if max_bytes.blank? || byte_size.blank?
         return if byte_size.to_i <= max_bytes
 
-        raise ArgumentError, I18n.t(
-          "recording_studio_dropbox.file_too_large",
-          default: "That Dropbox file is over the size limit"
-        )
+        raise ArgumentError, RecordingStudioDropbox.file_too_large_message
       end
 
       def attachable_max_file_size

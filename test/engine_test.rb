@@ -59,6 +59,7 @@ class EngineTest < Minitest::Test
     source = File.read(File.expand_path("../lib/recording_studio_dropbox/engine.rb", __dir__))
     refute_includes source, "register_oauth_provider"
     refute_includes source, "register_outbound_provider"
+    assert_includes source, "isolate_namespace"
   end
 
   private

@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-26
+
+### Changed
+- Dummy Oauth credentials come from `credentials.recording_studio_oauth.outbound.dropbox`.
+  Chooser `configuration.client_id` is set separately and is not read from
+  `attachable.dropbox` or `DROPBOX_CLIENT_ID` / `DROPBOX_CLIENT_SECRET`.
+- Chooser bootstrap probes Oauth `connection_status` / `connection_for`. It does
+  not return an access token string.
+- `Configuration#inspect` redacts `client_id` (the public Chooser app key).
+- Oversized Dropbox files raise one shared `file_too_large_message` from import
+  metadata checks and download body limits.
+- Development pins: `recording_studio_api` `v0.16.0`, `recording_studio_logs`
+  `v0.7.0`, `recording_studio_metrics` `v0.6.1`. Dummy also pins Attachable
+  `v0.21.1`. Oauth stays on `v0.15.1`.
+
+### Removed
+- Template leftovers: Dropbox migrations generator (this gem has no `db/migrate`),
+  unused engine `ApplicationController` and no-op isolated routes, dead
+  `install/INSTALL.md`, dummy `hello_controller`, dummy GitHub CI/Dependabot,
+  `install_page.html`, Copilot `.github/agents`, and empty dummy `.keep` stubs.
+- Stale RuboCop `test/services/**/*` exclusion.
+
+### Upgrade notes
+- Bump to `0.3.1`. No migration.
+- Host Oauth keys stay `credentials.recording_studio_oauth.outbound.dropbox`.
+  Set Chooser `RecordingStudioDropbox.configuration.client_id` in the initializer.
+  Do not copy Oauth secrets into `attachable.dropbox` or Dropbox-named ENV vars.
+- Pin git tag `v0.3.1`. Development hosts that match this dummy should move API,
+  logs, and metrics together as above. Attachable hosts can stay on `0.21.0`;
+  dummy uses `0.21.1`.
+
 ## [0.3.0] - 2026-10-23
 
 ### Added
@@ -79,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.3.1]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.3.1
 [0.3.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.3.0
 [0.2.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.2.0
 [0.1.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.1.0

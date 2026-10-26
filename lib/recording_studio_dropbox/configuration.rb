@@ -28,5 +28,12 @@ module RecordingStudioDropbox
     def available?
       enabled? && chooser_configured?
     end
+
+    # client_id is the public Chooser app key; redact it in inspect for family consistency.
+    def inspect
+      "#<#{self.class.name} enabled=#{enabled.inspect} " \
+        "client_id=#{client_id.present? ? '[FILTERED]' : 'nil'} " \
+        "page_size=#{page_size.inspect}>"
+    end
   end
 end

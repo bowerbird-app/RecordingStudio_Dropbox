@@ -111,7 +111,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.3.0"
+    tag: "v0.3.1"
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
@@ -150,8 +150,14 @@ bin/rails db:setup
 bin/dev
 ```
 
-Optional dummy env vars for a live Dropbox app: `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, and `RAILS_DEVELOPMENT_HOSTS`. Dummy also reads `attachable.dropbox` or `dropbox` from Rails credentials when those files exist. The upload page for the seeded Studio Workspace is `/recording_studio_attachable/recordings/<workspace-root-id>/attachments/upload`. Seeds print that path.
+For a live Dropbox app in dummy development, set
+`credentials.recording_studio_oauth.outbound.dropbox.client_id` and
+`client_secret`. Set Chooser `RecordingStudioDropbox.configuration.client_id` in
+the dummy initializer. `RAILS_DEVELOPMENT_HOSTS` is still optional when the host
+is not localhost. The upload page for the seeded Studio Workspace is
+`/recording_studio_attachable/recordings/<workspace-root-id>/attachments/upload`.
+Seeds print that path.
 
 ## Version
 
-0.3.0
+0.3.1
