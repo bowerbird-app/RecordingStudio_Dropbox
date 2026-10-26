@@ -20,20 +20,13 @@ module RecordingStudioDropbox
     def defaults
       {
         key: KEY,
-        kind: :root,
-        **urls,
+        authorize_url: AUTHORIZE_URL,
+        token_url: TOKEN_URL,
+        revoke_url: REVOKE_URL,
         scopes: RecordingStudioDropbox.configuration.scopes,
         pkce: true,
         refresh: true,
         extra_authorize_params: { "token_access_type" => TOKEN_ACCESS_TYPE }
-      }
-    end
-
-    def urls
-      {
-        authorize_url: AUTHORIZE_URL,
-        token_url: TOKEN_URL,
-        revoke_url: REVOKE_URL
       }
     end
 

@@ -6,7 +6,7 @@
            connect_method: :post,
            connect_fields: {
              owner: "root",
-             root_recording_id: dropbox_root.id,
+             root_recording_id: dropbox_root&.id,
              return_to: @oauth_return_to,
              authenticity_token: form_authenticity_token
            },

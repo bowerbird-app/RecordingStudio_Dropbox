@@ -8,17 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-10-26
 
 ### Changed
-- `RecordingStudioDropbox.register_oauth_provider` always registers the Dropbox
-  outbound provider with `kind: :root`. Passing `kind: :user` does not change that.
+- **BREAKING.** `RecordingStudioDropbox.register_oauth_provider` always registers
+  the Dropbox outbound provider with `kind: :root`. Passing `kind: :user` does
+  not change that.
 - RecordingStudioOauth is now `>= 0.17.0`, `< 1.0`. Pin git tag `v0.17.0`.
 
 ### Upgrade notes
-- Bump to `0.4.0`. No Dropbox migration.
+- Bump to `0.4.0`. No Dropbox migration. Pin git tag `v0.4.0`.
 - Pin Oauth git tag `v0.17.0`. Oauth 0.17.0 requires `kind:` on every outbound
-  provider. This gem supplies `:root`. Connect Dropbox as a workspace admin with
-  `owner=root` and the workspace `root_recording_id`. Personal Connect
-  (`owner=user`) is not valid for Dropbox.
-- Pin git tag `v0.4.0`.
+  provider. This gem supplies `:root`. Connect with `owner=root` and the
+  workspace `root_recording_id`. Root Connect needs the workspace admin role.
+  Non-admin uploaders can no longer connect Dropbox themselves.
+- **BREAKING.** Existing personal (`owner=user`) Dropbox connections no longer
+  work after Oauth 0.17.0. A workspace admin must reconnect Dropbox for the
+  workspace. Personal Connect (`owner=user`) is not valid for Dropbox.
 
 ## [0.3.1] - 2026-10-26
 
