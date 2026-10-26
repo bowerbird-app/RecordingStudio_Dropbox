@@ -97,7 +97,6 @@ class AttachableIntegrationTest < Minitest::Test
     assert_includes result.error, "size limit"
   end
 
-
   def test_import_download_uses_downloaded_body_size_when_metadata_is_smaller
     body = "actual-file-bytes"
     metadata_size = 3
