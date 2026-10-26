@@ -11,6 +11,8 @@ module RecordingStudioDropbox
         RecordingStudioDropbox.configuration
       end
 
+      helper_method :dropbox_root
+
       def dropbox_root
         Registration.root_for(@recording || find_recording)
       end

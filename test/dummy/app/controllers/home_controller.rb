@@ -10,10 +10,8 @@ class HomeController < ApplicationController
   def live_dropbox_connection
     return unless current_user && @root_recording
 
-    RecordingStudioOauth.connection_for(
-      provider: RecordingStudioDropbox::OauthProvider::KEY,
-      root: @root_recording,
-      actor: current_user
-    )
+    RecordingStudioOauth::OutboundConnection.live.for_provider(
+      RecordingStudioDropbox::OauthProvider::KEY
+    ).find_by(root_recording_id: @root_recording.id)
   end
 end
