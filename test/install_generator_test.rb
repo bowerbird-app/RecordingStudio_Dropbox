@@ -28,6 +28,8 @@ class InstallGeneratorTest < Minitest::Test
       __dir__
     )
     refute File.exist?(yaml_template)
+    refute File.exist?(File.expand_path("../lib/generators/recording_studio_dropbox/install/INSTALL.md", __dir__))
+    assert File.exist?(INSTALL_TEMPLATE_PATH)
   end
 
   def test_show_readme_displays_install_guide_for_invoke_behavior

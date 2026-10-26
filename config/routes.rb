@@ -1,6 +1,4 @@
 # frozen_string_literal: true
 
-# Library gem: hosts call Client directly. There are no engine screens to mount.
-RecordingStudioDropbox::Engine.routes.draw do
-  # no-op
-end
+# Library gem: hosts call Client directly. This engine exists for hooks and
+# assets. There are no engine screens to mount.

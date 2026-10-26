@@ -1,21 +1,21 @@
 # frozen_string_literal: true
 
-dropbox_app = begin
-  creds = Rails.application.credentials
-  nested = creds.dig(:attachable, :dropbox) || creds[:dropbox]
+oauth = begin
+  nested = Rails.application.credentials.dig(:recording_studio_oauth, :outbound, :dropbox)
   nested.respond_to?(:to_h) ? nested.to_h.symbolize_keys : {}
 rescue ActiveSupport::EncryptedFile::MissingKeyError, Errno::ENOENT, ArgumentError
   {}
 end
 
-client_id = dropbox_app[:client_id].presence || ENV["DROPBOX_CLIENT_ID"].presence
-client_secret = dropbox_app[:client_secret].presence || ENV["DROPBOX_CLIENT_SECRET"].presence
-use_fake = Rails.env.test? || client_id.blank? || client_secret.blank?
-
 RecordingStudioDropbox.configure do |config|
   config.enabled = true
-  config.client_id = client_id.presence || "test-dropbox-app-key"
+  # Chooser app key is public and is not the Oauth client_id.
+  config.client_id = "test-dropbox-app-key"
 end
+
+client_id = oauth[:client_id].presence
+client_secret = oauth[:client_secret].presence
+use_fake = Rails.env.test? || client_id.blank? || client_secret.blank?
 
 if use_fake
   require Rails.root.join("app/models/fake_dropbox_oauth")

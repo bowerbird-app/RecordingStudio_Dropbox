@@ -14,4 +14,11 @@ module RecordingStudioDropbox
       super(message)
     end
   end
+
+  def self.file_too_large_message
+    I18n.t(
+      "recording_studio_dropbox.file_too_large",
+      default: "That Dropbox file is over the size limit"
+    )
+  end
 end

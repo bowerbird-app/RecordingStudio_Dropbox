@@ -2,8 +2,6 @@
 
 module RecordingStudioDropbox
   class Engine < ::Rails::Engine
-    isolate_namespace RecordingStudioDropbox
-
     initializer "recording_studio_dropbox.before_initialize", before: "recording_studio_dropbox.load_config" do |_app|
       RecordingStudioDropbox.configuration.hooks.run(:before_initialize, self)
     end

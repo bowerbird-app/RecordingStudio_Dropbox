@@ -29,7 +29,11 @@ Then open the app and sign in with:
 - Email: `admin@admin.com`
 - Password: `Password`
 
-For a live Dropbox app in development, set `DROPBOX_CLIENT_ID` and `DROPBOX_CLIENT_SECRET`, or Rails credentials under `attachable.dropbox` or `dropbox`. Set `RAILS_DEVELOPMENT_HOSTS` if the host is not localhost.
+For a live Dropbox app in development, set
+`credentials.recording_studio_oauth.outbound.dropbox.client_id` and
+`client_secret`. Set Chooser `RecordingStudioDropbox.configuration.client_id` in
+`config/initializers/recording_studio_dropbox.rb`. Set `RAILS_DEVELOPMENT_HOSTS`
+if the host is not localhost.
 
 ## Useful Routes
 

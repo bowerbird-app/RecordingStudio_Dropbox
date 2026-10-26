@@ -93,8 +93,10 @@ class AttachableIntegrationTest < Minitest::Test
 
     refute downloaded
     refute result.success?
+    assert_equal RecordingStudioDropbox.file_too_large_message, result.error
     assert_includes result.error, "size limit"
   end
+
 
   def test_import_download_uses_downloaded_body_size_when_metadata_is_smaller
     body = "actual-file-bytes"
@@ -157,5 +159,54 @@ class AttachableIntegrationTest < Minitest::Test
     assert_equal RecordingStudioDropbox::Attachable::Registration::PROVIDER_KEY, seen[:provider]
     assert_equal root, seen[:root]
     assert_equal actor, seen[:actor]
+  end
+
+  def test_chooser_access_probes_oauth_status_and_does_not_return_a_token
+    root = Object.new
+    actor = Object.new
+    live = Object.new
+    token_called = false
+    statuses = []
+    connections = []
+
+    RecordingStudioDropbox::OauthToken.stub(:new, lambda { |**|
+      token_called = true
+      Object.new
+    }) do
+      RecordingStudioOauth.stub(
+        :connection_status,
+        lambda { |**kwargs|
+          statuses << kwargs
+          :active
+        }
+      ) do
+        RecordingStudioOauth.stub(
+          :connection_for,
+          lambda { |**kwargs|
+            connections << kwargs
+            live
+          }
+        ) do
+          result = RecordingStudioDropbox::Attachable::Registration.chooser_access(root: root, actor: actor)
+          assert_nil result
+        end
+      end
+    end
+
+    refute token_called
+    assert_equal [{ provider: :dropbox, root: root, actor: actor }], statuses
+    assert_equal [{ provider: :dropbox, root: root, actor: actor }], connections
+  end
+
+  def test_chooser_access_raises_reconnect_when_oauth_is_missing
+    error = RecordingStudioOauth.stub(:connection_status, :missing) do
+      RecordingStudioOauth.stub(:connection_for, nil) do
+        assert_raises(RecordingStudioDropbox::ReconnectRequired) do
+          RecordingStudioDropbox::Attachable::Registration.chooser_access(root: Object.new, actor: Object.new)
+        end
+      end
+    end
+
+    assert_includes error.message, "reconnect"
   end
 end

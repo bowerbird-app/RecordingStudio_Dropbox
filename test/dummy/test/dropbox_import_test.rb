@@ -203,7 +203,7 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
   test "bootstrap returns chooser client_id when connected" do
     follow_connect!
 
-    RecordingStudioDropbox::Attachable::Registration.stub(:chooser_access, "token-1") do
+    RecordingStudioDropbox::Attachable::Registration.stub(:chooser_access, nil) do
       get dropbox_bootstrap_path, as: :json
     end
 

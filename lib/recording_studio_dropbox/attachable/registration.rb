@@ -99,7 +99,11 @@ module RecordingStudioDropbox
       end
 
       def chooser_access(root:, actor:)
-        RecordingStudioDropbox::OauthToken.new(root: root, actor: actor).call
+        status = Oauth.connection_status(root: root, actor: actor)
+        connected = status == :active && Oauth.connection(root: root, actor: actor).present?
+        return if connected
+
+        raise RecordingStudioDropbox::ReconnectRequired, "Dropbox reconnect required"
       end
 
       def dropbox_helpers(context)

@@ -35,4 +35,14 @@ class ConfigurationTest < Minitest::Test
     assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, @configuration.scopes
     assert_equal RecordingStudioDropbox::Client::SCOPES, @configuration.scopes
   end
+
+  def test_inspect_redacts_client_id
+    @configuration.client_id = "dropbox-chooser-app-key"
+
+    inspected = @configuration.inspect
+
+    refute_includes inspected, "dropbox-chooser-app-key"
+    assert_includes inspected, "[FILTERED]"
+    assert_includes inspected, "client_id="
+  end
 end
