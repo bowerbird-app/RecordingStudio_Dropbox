@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - RecordingStudio is now `>= 4.2`, `< 7` so this gem can install beside 6.1.0.
+- Dummy and development pins move to Recording Studio `v6.3.0`, Flatpack `v0.1.327`, Oauth `v0.20.0`, Attachable `v0.22.0`, Root Switchable `v0.11.0`, Cache `v0.6.0`, Metrics `v0.7.0`, and the newest matching 6.x addon tags. Dummy `net-ssh` is `>= 7.3.8`.
 
 ### Upgrade notes
 - Bump to `0.4.1`. No Dropbox migration. Pin git tag `v0.4.1`.
+- Development hosts that match this dummy should pin Recording Studio `v6.3.0` and Flatpack `v0.1.327`.
 
 ## [0.4.0] - 2026-10-26
 

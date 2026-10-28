@@ -5,5 +5,5 @@ RecordingStudioAdmin.configure do |config|
   config.authentication_method = :authenticate_user!
   config.current_actor_method = :current_user
   config.async_widgets.enabled = false
-  config.engine_layout = "recording_studio/default_layout"
+  config.layout = "recording_studio/default_layout"
 end
