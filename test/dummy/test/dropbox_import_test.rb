@@ -416,16 +416,16 @@ class DropboxImportTest < ActionDispatch::IntegrationTest
   end
 
   def grant_workspace_access!(root, actor: @user, role: :admin)
-    original = RecordingStudioAccessible.configuration.access_management_authorizer
-    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
-    result = RecordingStudioAccessible.grant_access(
-      recording: root,
-      actor: actor,
-      role: role,
-      manager_actor: @user
-    )
+    result = if role.to_sym == :admin
+      RecordingStudioAccessible.bootstrap_owner_access!(recording: root, actor: actor)
+    else
+      RecordingStudioAccessible.grant_access(
+        recording: root,
+        actor: actor,
+        role: role,
+        manager_actor: @user
+      )
+    end
     raise result.error if result.failure?
-  ensure
-    RecordingStudioAccessible.configuration.access_management_authorizer = original
   end
 end

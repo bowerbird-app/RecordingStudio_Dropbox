@@ -173,6 +173,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes schema, 'create_table "active_storage_blobs"'
     assert_includes schema, 'create_table "recording_studio_oauth_outbound_connections"'
     assert_includes schema, 'create_table "recording_studio_oauth_outbound_handshakes"'
+    assert_includes schema, 't.string "plugin_key"'
     migration = File.read(
       File.expand_path(
         "dummy/db/migrate/20260911024811_add_depends_on_recording_id_to_recording_studio_accesses.rb",
