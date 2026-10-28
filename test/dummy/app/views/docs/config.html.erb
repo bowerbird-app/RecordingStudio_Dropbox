@@ -1,12 +1,10 @@
-<% dummy_page_nav(title: "Config", back_url: root_path) %>
+<% dummy_page_nav(
+  title: "Config",
+  subtitle: "This gem keeps host configuration on RecordingStudioDropbox.configuration.hooks.",
+  back_url: root_path
+) %>
 
 <div class="flex w-full flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Config",
-    subtitle: "This gem keeps host configuration on RecordingStudioDropbox.configuration.hooks.",
-    variant: :h1
-  ) %>
-
   <%= render FlatPack::CodeBlock::Component.new(
     language: :ruby,
     code: <<~'CODE'

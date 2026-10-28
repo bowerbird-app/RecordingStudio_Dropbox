@@ -1,12 +1,6 @@
-<% dummy_page_nav(title: "Dropbox", back_url: root_path) %>
+<% dummy_page_nav(title: "Dropbox", subtitle: dropbox_home_subtitle, back_url: root_path) %>
 
 <div class="flex w-full flex-col gap-6">
-  <%= render FlatPack::PageTitle::Component.new(
-    title: "Dropbox",
-    subtitle: dropbox_home_subtitle,
-    variant: :h1
-  ) %>
-
   <% if notice.present? %>
     <%= render FlatPack::Alert::Component.new(style: :success, title: notice) %>
   <% end %>
