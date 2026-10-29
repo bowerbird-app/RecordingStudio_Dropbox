@@ -111,7 +111,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.4.1"
+    tag: "v0.4.2"
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
@@ -160,4 +160,4 @@ Seeds print that path.
 
 ## Version
 
-0.4.1
+0.4.2

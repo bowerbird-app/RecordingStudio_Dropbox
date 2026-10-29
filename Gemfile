@@ -6,7 +6,7 @@ source "https://rubygems.org"
 gemspec
 
 # GitHub-only gems. recording_studio_oauth pulls the rest of this set.
-gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.327"
+gem "flat_pack", github: "bowerbird-app/flatpack", tag: "v0.1.329"
 gem "recording_studio", github: "bowerbird-app/RecordingStudio", tag: "v6.3.0"
 gem "recording_studio_accessible", github: "bowerbird-app/RecordingStudio_accessible", tag: "v0.23.0"
 gem "recording_studio_admin", github: "bowerbird-app/RecordingStudio_admin", tag: "v2.7.1"

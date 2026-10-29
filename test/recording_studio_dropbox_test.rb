@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.4.1", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.4.2", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -145,7 +145,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_cache", tag: "v0.6.0"'
     refute_includes gemfile, 'tag: "v0.5.0"'
     refute_includes gemfile, 'tag: "v0.5.1"'
-    assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.327"'
+    assert_includes gemfile, 'github: "bowerbird-app/flatpack", tag: "v0.1.329"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_Oauth", tag: "v0.20.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_metrics", tag: "v0.7.0"'
     assert_includes gemfile, 'github: "bowerbird-app/RecordingStudio_api", tag: "v0.17.1"'
