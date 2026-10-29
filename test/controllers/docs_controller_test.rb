@@ -5,6 +5,7 @@ require_relative "../test_helper"
 require_relative "../dummy/config/environment"
 require_relative "../dummy/test/support/reset_seed_data"
 
+require "cgi"
 require "devise/test/integration_helpers"
 require "rails/test_help"
 
@@ -31,6 +32,7 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Add the gem and run the install generator."
     assert_includes response.body, "recording_studio_dropbox"
     assert_includes response.body, "bin/rails generate recording_studio_dropbox:install"
+    assert_includes CGI.unescapeHTML(response.body), %(tag: "v#{RecordingStudioDropbox::VERSION}")
   end
 
   test "config page renders successfully" do
@@ -39,6 +41,10 @@ class DocsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Config"
     assert_includes response.body, "This gem keeps host configuration on RecordingStudioDropbox.configuration.hooks."
     assert_includes response.body, "RecordingStudioDropbox.configure"
+    assert_includes response.body, "config.enabled"
+    assert_includes response.body, "config.client_id"
+    assert_includes response.body, "config.scopes"
+    refute_includes response.body, "config.hooks.on"
   end
 
   test "recordable types page renders configured recordables dynamically" do

@@ -111,15 +111,21 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.4.2"
+    tag: "v0.4.3"
+```
 
+The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
+
+This repo's dummy app pins:
+
+```ruby
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.17.0"
+    tag: "v0.20.0"
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
-    tag: "v0.21.0"
+    tag: "v0.22.0"
 ```
 
 ```bash
@@ -160,4 +166,4 @@ Seeds print that path.
 
 ## Version
 
-0.4.2
+0.4.3
