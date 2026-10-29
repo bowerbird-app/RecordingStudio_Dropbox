@@ -4,13 +4,25 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.4.2", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.4.3", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
     assert_includes gemspec, 'spec.required_ruby_version = ">= 3.3.0"'
     refute_includes gemspec, '">= 3.3.12"'
     assert_equal "3.3.12", ruby_version
+  end
+
+  def test_dummy_database_names_match_devcontainer
+    database_yml = File.read(File.expand_path("dummy/config/database.yml", __dir__))
+    compose = File.read(File.expand_path("../.devcontainer/docker-compose.yml", __dir__))
+
+    assert_includes database_yml, "recording_studio_dropbox_development"
+    assert_includes database_yml, "recording_studio_dropbox_test"
+    refute_includes database_yml, "app_development"
+    refute_includes database_yml, "app_test"
+    assert_includes compose, "recording_studio_dropbox_development"
+    refute_includes compose, "app_development"
   end
 
   def test_engine_exists
@@ -353,7 +365,13 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
-    assert_includes readme, 'tag: "v0.21.0"'
+    assert_includes readme, 'tag: "v0.4.3"'
+    assert_includes readme, 'tag: "v0.20.0"'
+    assert_includes readme, 'tag: "v0.22.0"'
+    assert_includes readme, "The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`"
+    assert_includes readme, "dummy app pins"
+    refute_includes readme, 'tag: "v0.21.0"'
+    refute_includes readme, 'tag: "v0.17.0"'
     refute_includes readme, "900cc3a169e26f0e4604e1acb3cbc1d81281aa87"
     refute_includes readme, "Planned Attachable wiring"
     refute_includes readme, "Dummy credentials"

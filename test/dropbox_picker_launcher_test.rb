@@ -21,8 +21,9 @@ class DropboxPickerLauncherTest < Minitest::Test
     refute_includes launcher_source, "Choose from Dropbox"
     refute_includes launcher_source, "oauth_connect_url"
 
-    skip "node is not available" unless node_available?
-    skip "recording_studio_attachable is not in this bundle" unless provider_launchers_path
+    assert node_available?, "node is required to run the Dropbox picker launcher harness"
+    assert provider_launchers_path,
+           "recording_studio_attachable must be in this bundle so provider_launchers.js can load"
 
     stdout, stderr, status = run_node_launcher_harness
     assert status.success?, "#{stderr}\n#{stdout}"

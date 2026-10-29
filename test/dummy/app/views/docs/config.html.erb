@@ -9,9 +9,9 @@
     language: :ruby,
     code: <<~'CODE'
       RecordingStudioDropbox.configure do |config|
-        config.hooks.on(:after_initialize) do |_engine|
-          # Host-only hook. Register the Dropbox Oauth provider from this gem.
-        end
+        config.enabled = false
+        config.client_id = nil
+        config.scopes = %w[files.metadata.read files.content.read]
       end
     CODE
   ) %>

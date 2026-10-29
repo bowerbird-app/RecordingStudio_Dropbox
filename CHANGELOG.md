@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-10-29
+
+### Changed
+- Dummy install docs show the current gem tag.
+- README documents dummy Oauth `v0.20.0` and Attachable `v0.22.0` pins separately from gemspec floors (Oauth `>= 0.17.0`, `< 1.0`; Attachable is optional).
+- Dummy config docs show `enabled`, `client_id`, and `scopes`.
+- Dummy Postgres defaults are `recording_studio_dropbox_development` and `recording_studio_dropbox_test`.
+- Dropbox picker launcher Node harness fails when Node or Attachable is missing.
+- Dummy Dropbox tests share one `grant_workspace_access!` helper.
+
+### Upgrade notes
+- Bump to `0.4.3`. No Dropbox migration. Do not tag this PR; pin git tag `v0.4.3` when the release is cut.
+
 ## [0.4.2] - 2026-10-29
 
 ### Changed
@@ -147,6 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.4.3]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.3
 [0.4.2]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.2
 [0.4.1]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.1
 [0.4.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.0
