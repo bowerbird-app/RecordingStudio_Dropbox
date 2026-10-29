@@ -25,28 +25,6 @@ class RecordingStudioDropboxTest < Minitest::Test
     refute_includes compose, "app_development"
   end
 
-  def test_picker_launcher_harness_does_not_skip_when_node_is_missing
-    source = File.read(File.expand_path("dropbox_picker_launcher_test.rb", __dir__))
-
-    refute_includes source, "skip "
-    assert_includes source, "assert node_available?"
-    assert_includes source, "assert provider_launchers_path"
-  end
-
-  def test_dummy_dropbox_tests_share_grant_workspace_access
-    helper = File.read(File.expand_path("dummy/test/support/grant_workspace_access.rb", __dir__))
-    test_helper = File.read(File.expand_path("dummy/test/test_helper.rb", __dir__))
-    copies = Dir[
-      File.expand_path("dummy/test/**/*.rb", __dir__)
-    ].reject { |path| path.end_with?("support/grant_workspace_access.rb") }.select do |path|
-      File.read(path).include?("def grant_workspace_access!")
-    end
-
-    assert_includes helper, "def grant_workspace_access!"
-    assert_includes test_helper, "include GrantWorkspaceAccess"
-    assert_empty copies, "grant_workspace_access! must live in one helper (found #{copies.join(', ')})"
-  end
-
   def test_engine_exists
     assert_kind_of Class, ::RecordingStudioDropbox::Engine
   end

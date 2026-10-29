@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.3] - 2026-10-29
 
-### Fixed
-- `Attachable::Import::SelectionResult#success?` is true when `error` is blank.
-
 ### Changed
 - Dummy install docs show the current gem tag.
 - README documents dummy Oauth `v0.20.0` and Attachable `v0.22.0` pins separately from gemspec floors (Oauth `>= 0.17.0`, `< 1.0`; Attachable is optional).

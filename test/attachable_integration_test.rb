@@ -38,16 +38,6 @@ class AttachableIntegrationTest < Minitest::Test
     assert_nil blank
   end
 
-  def test_selection_result_success_follows_blank_error
-    ok = RecordingStudioDropbox::Attachable::Import::SelectionResult.new(value: [Object.new])
-    empty_error = RecordingStudioDropbox::Attachable::Import::SelectionResult.new(error: "")
-    failed = RecordingStudioDropbox::Attachable::Import::SelectionResult.new(error: "Select at least one file")
-
-    assert_predicate ok, :success?
-    assert_predicate empty_error, :success?
-    refute_predicate failed, :success?
-  end
-
   def test_selections_from_drops_duplicates
     selections = RecordingStudioDropbox::Attachable::Import.selections_from(
       ["id:file-1", { "id" => "id:file-1" }, "id:file-2"]

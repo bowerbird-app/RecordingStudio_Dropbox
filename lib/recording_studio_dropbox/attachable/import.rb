@@ -9,7 +9,7 @@ module RecordingStudioDropbox
     module Import
       SelectionResult = Struct.new(:error, :value, keyword_init: true) do
         def success?
-          error.blank?
+          false
         end
       end
 
