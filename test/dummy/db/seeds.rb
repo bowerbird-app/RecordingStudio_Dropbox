@@ -44,17 +44,11 @@ begin
   grant_workspace_admin = lambda do |recording, actor|
     next unless defined?(RecordingStudioAccessible)
 
-    original = RecordingStudioAccessible.configuration.access_management_authorizer
-    RecordingStudioAccessible.configuration.access_management_authorizer = ->(**) { true }
-    result = RecordingStudioAccessible.grant_access(
+    result = RecordingStudioAccessible.bootstrap_owner_access!(
       recording: recording,
-      actor: actor,
-      role: :admin,
-      manager_actor: actor
+      actor: actor
     )
     raise result.error if result.failure?
-  ensure
-    RecordingStudioAccessible.configuration.access_management_authorizer = original if defined?(original)
   end
 
   grant_workspace_admin.call(root_recording, user)
