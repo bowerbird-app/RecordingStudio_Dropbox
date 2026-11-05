@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-11-05
+
+### Changed
+- Security lockfile refresh: Rails `8.1.4.1`, rack `3.2.8`, loofah `2.25.3`, nokogiri `1.19.7`, rails-html-sanitizer `1.7.2`. No behavior change.
+
+### Upgrade notes
+- Bump to `0.4.4`. No Dropbox migration. Do not tag this PR; pin git tag `v0.4.4` when the release is cut.
+
 ## [0.4.3] - 2026-10-29
 
 ### Changed
@@ -160,6 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.4.4]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.4
 [0.4.3]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.3
 [0.4.2]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.2
 [0.4.1]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.1

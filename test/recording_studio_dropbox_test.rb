@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.4.3", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.4.4", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -365,7 +365,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
-    assert_includes readme, 'tag: "v0.4.3"'
+    assert_includes readme, 'tag: "v0.4.4"'
     assert_includes readme, 'tag: "v0.20.0"'
     assert_includes readme, 'tag: "v0.22.0"'
     assert_includes readme, "The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`"
