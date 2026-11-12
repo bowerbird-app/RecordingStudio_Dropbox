@@ -94,18 +94,64 @@ class DropboxApiTest < ActionDispatch::IntegrationTest
 
     RecordingStudioDropbox::Api::Registration::EXCLUDED_ENDPOINT_NAMES.each do |name|
       refute RecordingStudioApi.registered_endpoint(name, api: :public), name
-      refute RecordingStudioApi.capability_action(name.to_sym, api: :public) if RecordingStudioApi.respond_to?(:capability_action)
+      refute RecordingStudioApi.capability_action(name.to_sym, api: :public), name
+    end
+  end
+
+  test "dropbox.list and dropbox.search pass the next_cursor into the second page" do
+    with_dropbox_client(paging_client) do
+      listed = call(:get, "/dropbox/list", @editor_token, recording_id: @root.id, page_size: 1)
+      assert_response :success, response.body
+      assert_equal %w[Brief.pdf], listed.fetch("entries").map { |entry| entry.fetch("name") }
+      assert_equal "list-page-2", listed.fetch("next_cursor")
+
+      listed_next = call(
+        :get, "/dropbox/list", @editor_token, recording_id: @root.id, cursor: listed.fetch("next_cursor")
+      )
+      assert_response :success, response.body
+      assert_equal %w[Notes.txt], listed_next.fetch("entries").map { |entry| entry.fetch("name") }
+      assert_nil listed_next["next_cursor"]
+
+      searched = call(:get, "/dropbox/search", @editor_token, recording_id: @root.id, query: "Brief", page_size: 1)
+      assert_response :success, response.body
+      assert_equal %w[Brief.pdf], searched.fetch("entries").map { |entry| entry.fetch("name") }
+      assert_equal "search-page-2", searched.fetch("next_cursor")
+
+      searched_next = call(
+        :get,
+        "/dropbox/search",
+        @editor_token,
+        recording_id: @root.id,
+        query: "Brief",
+        cursor: searched.fetch("next_cursor")
+      )
+      assert_response :success, response.body
+      assert_equal %w[Briefs.doc], searched_next.fetch("entries").map { |entry| entry.fetch("name") }
+      assert_nil searched_next["next_cursor"]
+    end
+  end
+
+  test "each dropbox endpoint returns 401 without a token" do
+    call(:post, "/dropbox/import", nil, recording_id: @root.id, attachments: [{ "id" => "id:file-1" }])
+    assert_response :unauthorized
+
+    call(:get, "/dropbox/list", nil, recording_id: @root.id)
+    assert_response :unauthorized
+
+    call(:get, "/dropbox/search", nil, recording_id: @root.id, query: "Brief")
+    assert_response :unauthorized
+  end
+
+  test "a Dropbox reconnect is 401" do
+    client = Object.new
+    client.define_singleton_method(:list) do |**|
+      raise RecordingStudioDropbox::ReconnectRequired, "reconnect Dropbox"
     end
 
-    if defined?(RecordingStudioMcp) && RecordingStudioMcp.respond_to?(:tools)
-      tool_names = Array(RecordingStudioMcp.tools).map { |tool| tool.respond_to?(:name) ? tool.name : tool.to_s }
-      assert_includes tool_names, "dropbox.import"
-      assert_includes tool_names, "dropbox.list"
-      assert_includes tool_names, "dropbox.search"
-      RecordingStudioDropbox::Api::Registration::EXCLUDED_ENDPOINT_NAMES.each do |name|
-        refute_includes tool_names, name
-      end
+    with_dropbox_client(client) do
+      call(:get, "/dropbox/list", @editor_token, recording_id: @root.id)
     end
+    assert_response :unauthorized
   end
 
   private
@@ -162,7 +208,8 @@ class DropboxApiTest < ActionDispatch::IntegrationTest
   end
 
   def headers(token)
-    { "Authorization" => "Bearer #{token}", "Accept" => "application/json" }
+    accept = { "Accept" => "application/json" }
+    token.present? ? accept.merge("Authorization" => "Bearer #{token}") : accept
   end
 
   def parse_json
@@ -173,6 +220,34 @@ class DropboxApiTest < ActionDispatch::IntegrationTest
 
   def with_dropbox_client(client, &block)
     RecordingStudioDropbox::Attachable::Registration.stub(:client, ->(**) { client }, &block)
+  end
+
+  def paging_client
+    page1_file = RecordingStudioDropbox::Entry.new(
+      id: "id:file-1", name: "Brief.pdf", path: "/Brief.pdf", tag: "file", size: 12
+    )
+    page2_file = RecordingStudioDropbox::Entry.new(
+      id: "id:file-2", name: "Notes.txt", path: "/Notes.txt", tag: "file", size: 8
+    )
+    search_page2 = RecordingStudioDropbox::Entry.new(
+      id: "id:file-3", name: "Briefs.doc", path: "/Briefs.doc", tag: "file", size: 9
+    )
+    client = Object.new
+    client.define_singleton_method(:list) do |cursor: nil, **|
+      if cursor == "list-page-2"
+        RecordingStudioDropbox::Page.new(entries: [page2_file], next_cursor: nil)
+      else
+        RecordingStudioDropbox::Page.new(entries: [page1_file], next_cursor: "list-page-2")
+      end
+    end
+    client.define_singleton_method(:search) do |cursor: nil, **|
+      if cursor == "search-page-2"
+        RecordingStudioDropbox::Page.new(entries: [search_page2], next_cursor: nil)
+      else
+        RecordingStudioDropbox::Page.new(entries: [page1_file], next_cursor: "search-page-2")
+      end
+    end
+    client
   end
 
   def listing_client

@@ -15,7 +15,7 @@ module RecordingStudioDropbox
         recording = Access.recording_for!(context)
         result = RecordingStudioDropbox::Attachable::Import.remote_files(
           parent_recording: recording,
-          attachments: context.params[:attachments],
+          attachments: file_ids,
           actor: Access.actor_for(context),
           impersonator: impersonator
         )
@@ -28,16 +28,27 @@ module RecordingStudioDropbox
 
       attr_reader :context
 
+      def file_ids
+        Array(context.params[:attachments]).filter_map { |item| file_id(item) }
+      end
+
+      def file_id(item)
+        return item.presence if item.is_a?(String)
+        return unless item.is_a?(Hash)
+
+        item[:id].presence || item["id"].presence
+      end
+
       def impersonator
-        context.authorized_by if context.respond_to?(:authorized_by)
+        context.authorized_by
       end
 
       def imported_as_json(recording)
         attachment = recording.recordable
         {
           id: recording.id,
-          name: attachment.respond_to?(:name) ? attachment.name : nil,
-          kind: attachment.respond_to?(:attachment_kind) ? attachment.attachment_kind : nil
+          name: attachment&.name,
+          kind: attachment&.attachment_kind
         }
       end
     end

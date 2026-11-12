@@ -166,7 +166,7 @@ Seeds print that path.
 
 ## API and MCP
 
-When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools. Authorization is Attachable's Accessible upload-role check on the target recording, through `api_authorize`. These are wrappers. They do not add Dropbox behavior.
+When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
 
 | Endpoint / MCP tool | HTTP | Wraps |
 | --- | --- | --- |

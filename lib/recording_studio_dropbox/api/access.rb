@@ -10,17 +10,12 @@ module RecordingStudioDropbox
       def authorized?(context, recording:)
         actor = actor_for(context)
         return false if actor.blank? || recording.blank?
-        return false unless defined?(RecordingStudioAttachable::Authorization)
 
         RecordingStudioAttachable::Authorization.allowed?(
           action: :upload,
           actor: actor,
           recording: recording
         )
-      end
-
-      def api_authorize
-        method(:authorized?)
       end
 
       def authorize!(context, recording:)

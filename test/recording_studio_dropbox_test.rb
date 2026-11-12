@@ -41,6 +41,8 @@ class RecordingStudioDropboxTest < Minitest::Test
     )
 
     assert_includes engine, "ActiveSupport.on_load(:recording_studio_attachable)"
+    assert_includes engine, "defined?(RecordingStudioApi)"
+    assert_includes engine, "defined?(RecordingStudioAttachable)"
     assert_includes engine, "RecordingStudioDropbox::Api.register!"
     assert_includes engine, "Gem::Version.new(RecordingStudioAttachable::VERSION)"
     assert_includes attachable, "register_adapter_routes(:dropbox)"
@@ -364,7 +366,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "dropbox.import"
     assert_includes readme, "dropbox.list"
     assert_includes readme, "dropbox.search"
-    assert_includes readme, "api_authorize"
+    assert_includes readme, "in-handler Attachable/Accessible upload-role check"
     assert_includes readme, "config.enabled"
     assert_includes readme, "config.client_id"
     assert_includes readme, "`content_type` is always `nil`"

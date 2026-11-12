@@ -14,23 +14,9 @@ module RecordingStudioDropbox
 
       def register_endpoint!(endpoint, api:)
         name = endpoint.fetch(:name)
-        return unless registrable?(name, api: api)
+        return if RecordingStudioApi.registered_endpoint(name, api: api)
 
         RecordingStudioApi.register_endpoint(name, api: api, **endpoint.except(:name))
-      end
-
-      def registrable?(name, api:)
-        recording_studio_api_available? && !already_registered?(name, api: api)
-      end
-
-      def already_registered?(name, api:)
-        return false unless RecordingStudioApi.respond_to?(:registered_endpoint)
-
-        RecordingStudioApi.registered_endpoint(name, api: api).present?
-      end
-
-      def recording_studio_api_available?
-        defined?(RecordingStudioApi) && RecordingStudioApi.respond_to?(:register_endpoint)
       end
     end
   end

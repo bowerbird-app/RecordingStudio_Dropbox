@@ -8,7 +8,7 @@ module RecordingStudioDropbox
       def wrap
         yield
       rescue RecordingStudioDropbox::ReconnectRequired => e
-        raise RecordingStudioApi::AuthorizationError, e.message
+        raise RecordingStudioApi::AuthenticationError, e.message
       rescue RecordingStudioDropbox::RequestError, ArgumentError => e
         raise RecordingStudioApi::InvalidActionInputError, e.message
       end
