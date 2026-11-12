@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.4.4", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.5.0", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -41,6 +41,9 @@ class RecordingStudioDropboxTest < Minitest::Test
     )
 
     assert_includes engine, "ActiveSupport.on_load(:recording_studio_attachable)"
+    assert_includes engine, "defined?(RecordingStudioApi)"
+    assert_includes engine, "defined?(RecordingStudioAttachable)"
+    assert_includes engine, "RecordingStudioDropbox::Api.register!"
     assert_includes engine, "Gem::Version.new(RecordingStudioAttachable::VERSION)"
     assert_includes attachable, "register_adapter_routes(:dropbox)"
     assert_includes attachable, 'mount RecordingStudioDropbox::Attachable::Engine, at: "/dropbox", as: :dropbox'
@@ -65,6 +68,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes gemspec, 'spec.add_dependency "recording_studio", ">= 4.2", "< 7"'
     assert_includes gemspec, 'spec.add_dependency "recording_studio_oauth", ">= 0.17.0", "< 1.0"'
     refute_includes gemspec, 'spec.add_dependency "recording_studio_attachable"'
+    refute_includes gemspec, 'spec.add_dependency "recording_studio_api"'
   end
 
   def test_gemspec_excludes_cursor_config
@@ -359,13 +363,17 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "recording_studio_oauth.outbound.dropbox.client_secret"
     assert_includes readme, "ReconnectRequired"
     assert_includes readme, "register_upload_provider"
+    assert_includes readme, "dropbox.import"
+    assert_includes readme, "dropbox.list"
+    assert_includes readme, "dropbox.search"
+    assert_includes readme, "in-handler Attachable/Accessible upload-role check"
     assert_includes readme, "config.enabled"
     assert_includes readme, "config.client_id"
     assert_includes readme, "`content_type` is always `nil`"
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
-    assert_includes readme, 'tag: "v0.4.4"'
+    assert_includes readme, 'tag: "v0.5.0"'
     assert_includes readme, 'tag: "v0.20.0"'
     assert_includes readme, 'tag: "v0.22.0"'
     assert_includes readme, "The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`"

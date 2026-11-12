@@ -21,6 +21,16 @@ module RecordingStudioDropbox
 
       app.config.assets.paths << root.join("app/javascript")
     end
+
+    initializer "recording_studio_dropbox.api" do
+      config.to_prepare do
+        next unless defined?(RecordingStudioApi) && RecordingStudioApi.respond_to?(:register_endpoint)
+        next unless defined?(RecordingStudioAttachable) && defined?(RecordingStudioDropbox::Attachable::Import)
+
+        require "recording_studio_dropbox/api"
+        RecordingStudioDropbox::Api.register!
+      end
+    end
   end
 end
 

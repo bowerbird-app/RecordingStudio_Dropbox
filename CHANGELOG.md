@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-12
+
+### Added
+- Public API endpoints `dropbox.import`, `dropbox.list`, and `dropbox.search`, registered from this gem with `RecordingStudioApi.register_endpoint`. MCP advertises each as a tool with the same name. Each call is a thin wrapper over existing gem methods (`Attachable::Import.remote_files`, `Client#list`, `Client#search`).
+- Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. Download, upload, OAuth connect/disconnect, Chooser bootstrap, and `register_oauth_provider` stay unexposed. A Dropbox reconnect maps to HTTP 401, same as the picker.
+
+### Upgrade notes
+- Bump to `0.5.0`. No Dropbox migration. Do not tag this PR; pin git tag `v0.5.0` when the release is cut.
+- Hosts that already mount Recording Studio API and Attachable get the endpoints on boot. No extra initializer call. Grant API clients the Accessible upload role (`:edit` by default) on the recording they import onto. `recording_studio_api` stays optional and is not a gemspec dependency.
+
 ## [0.4.4] - 2026-11-05
 
 ### Changed

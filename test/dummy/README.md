@@ -11,6 +11,7 @@ This Rails app exists to validate the Recording Studio Dropbox gem in a real hos
 - Mounted `RecordingStudio::Engine` route behavior inside a host app
 - Dropbox connect, disconnect, and reconnect through Recording Studio Oauth, using a fake Dropbox provider (no real credentials)
 - Attachable upload page with Dropbox Chooser and the file-list import page
+- API endpoints `dropbox.import`, `dropbox.list`, and `dropbox.search` for agents and API clients
 - Dummy-only `/docs/*` pages for gem-specific onboarding
 
 ## Quick Start
