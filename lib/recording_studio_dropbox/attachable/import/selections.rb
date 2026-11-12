@@ -21,6 +21,7 @@ module RecordingStudioDropbox
         end
 
         def stringify_hash(value)
+          return if value.nil?
           return unless value.respond_to?(:to_h)
 
           hash = value.to_h

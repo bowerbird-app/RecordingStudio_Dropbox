@@ -71,8 +71,10 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
     workspace_source = File.read(Rails.root.join("app/models/workspace.rb"))
 
     refute_includes workspace_source, "Capabilities::Example"
+    assert_includes workspace_source, "api_access_point"
     assert RecordingStudio.capability_enabled?(:accessible, for: Workspace)
     assert RecordingStudio.capability_enabled?(:attachable, for: Workspace)
+    assert RecordingStudio.capability_enabled?(:api_access_point, for: Workspace)
     refute RecordingStudio.capability_enabled?(:accessible, for: Folder)
     refute RecordingStudio.capability_enabled?(:accessible, for: Page)
     assert_includes ApplicationController.ancestors, RecordingStudio::ControllerLayout

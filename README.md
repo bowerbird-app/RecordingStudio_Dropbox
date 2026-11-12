@@ -2,7 +2,7 @@
 
 This gem talks to the Dropbox HTTP API for Recording Studio. It lists folders, fetches metadata, downloads files, and uploads files. Files are copied into storage later. This gem does not link Dropbox files in place.
 
-Dropbox is a root plugin. A workspace admin connects it once for the workspace. Tokens live on RecordingStudioOauth outbound connections. The host registers the provider with `RecordingStudioDropbox.register_oauth_provider`. That call always sends `kind: :root`. A host cannot override it to `:user`. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page.
+Dropbox is a root plugin. A workspace admin connects it once for the workspace. Tokens live on RecordingStudioOauth outbound connections. The host registers the provider with `RecordingStudioDropbox.register_oauth_provider`. That call always sends `kind: :root`. A host cannot override it to `:user`. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page. When RecordingStudioApi is also loaded, it registers `dropbox.import`, `dropbox.list`, and `dropbox.search` as named API endpoints (MCP tools with the same names).
 
 ## What you get
 
@@ -111,7 +111,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.4.4"
+    tag: "v0.5.0"
 ```
 
 The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
@@ -164,6 +164,20 @@ is not localhost. The upload page for the seeded Studio Workspace is
 `/recording_studio_attachable/recordings/<workspace-root-id>/attachments/upload`.
 Seeds print that path.
 
+## API and MCP
+
+When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools. Authorization is Attachable's Accessible upload-role check on the target recording, through `api_authorize`. These are wrappers. They do not add Dropbox behavior.
+
+| Endpoint / MCP tool | HTTP | Wraps |
+| --- | --- | --- |
+| `dropbox.import` | `POST .../dropbox/import` | `RecordingStudioDropbox::Attachable::Import.remote_files` |
+| `dropbox.list` | `GET .../dropbox/list` | `RecordingStudioDropbox::Client#list` |
+| `dropbox.search` | `GET .../dropbox/search` | `RecordingStudioDropbox::Client#search` |
+
+Each call takes `recording_id`. Import takes `attachments` (each needs a Dropbox `id`). List takes optional `path`, `cursor`, and `page_size`. Search takes `query` plus optional `cursor` and `page_size`.
+
+Not exposed: `fetch_file` / `download`, `upload_file`, OAuth connect/disconnect, Chooser bootstrap, and `register_oauth_provider`.
+
 ## Version
 
-0.4.4
+0.5.0

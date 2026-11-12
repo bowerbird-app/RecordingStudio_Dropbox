@@ -7,7 +7,10 @@ RecordingStudioDropbox install complete.
    Dropbox app key and set enabled to true.
 4. Mount RecordingStudioOauth and RecordingStudioAttachable. Run Oauth and
    Attachable install plus migrations.
-5. Resolve tokens with RecordingStudioDropbox::OauthToken, then pass that to Client.
+5. If the host mounts Recording Studio API, this gem registers `dropbox.import`,
+   `dropbox.list`, and `dropbox.search` on boot. MCP lists those same names as
+   tools. Grant API clients the Accessible upload role on the target recording.
+6. Resolve tokens with RecordingStudioDropbox::OauthToken, then pass that to Client.
    Oauth registration uses files.metadata.read and files.content.read.
    Override scopes with RecordingStudioDropbox.configuration.scopes if you
    need files.content.write.

@@ -30,11 +30,16 @@ class AttachableIntegrationTest < Minitest::Test
     from_hash = RecordingStudioDropbox::Attachable::Import.selection_from(
       { "provider_payload" => { "id" => "id:file-2", "name" => "Brief.pdf" }, "name" => "Brief.pdf" }
     )
+    from_id = RecordingStudioDropbox::Attachable::Import.selection_from(
+      { "id" => "id:file-3", "name" => "Brief.pdf" }
+    )
     blank = RecordingStudioDropbox::Attachable::Import.selection_from({})
 
     assert_equal "id:file-1", from_string.fetch("id")
     assert_equal "id:file-2", from_hash.fetch("id")
     assert_equal "Brief.pdf", from_hash.fetch("name")
+    assert_equal "id:file-3", from_id.fetch("id")
+    assert_equal "Brief.pdf", from_id.fetch("name")
     assert_nil blank
   end
 
