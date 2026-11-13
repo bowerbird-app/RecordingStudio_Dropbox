@@ -18,6 +18,10 @@ RecordingStudio.configure do |config|
   # Require each configured ActiveRecord type to call recording_studio_recordable.
   config.require_recordable_declarations = true
 
+  # Recording Studio 6.5+ denies a write when authorize_write is unset.
+  # This dummy creates recordings in tests before an actor exists.
+  config.allow_unauthorized_writes = true
+
   # Shown in the shared default layout title fallback.
   config.app_name = "Dropbox Demo" if config.respond_to?(:app_name=)
 
