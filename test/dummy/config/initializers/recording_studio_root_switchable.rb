@@ -27,10 +27,16 @@ RecordingStudioRootSwitchable.configure do |config|
         RecordingStudio.root_recording_for(workspace)
       end
     end
+    # Switch tests can target a root the actor cannot view. The mounted page
+    # still requires Accessible :view on the current root, so the default must
+    # be a root the actor can view. Otherwise a seeded workspace becomes
+    # current and the switch page returns 403.
     scope.access_check = ->(**) { true }
 
-    scope.default_root = lambda do |roots:, **|
-      roots.first
+    scope.default_root = lambda do |roots:, actor:, **|
+      roots.find do |recording|
+        RecordingStudioAccessible.authorized?(actor: actor, recording: recording, role: :view)
+      end
     end
   end
 end
