@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-11-15
+
+### Changed
+- Allow recording_studio < 8.0 (core 7 phase 1).
+
+### Upgrade notes
+- Bump to `0.5.1`. No Dropbox migration. Do not tag this PR; pin git tag `v0.5.1` when the release is cut.
+- The `recording_studio` floor stays `>= 4.2`. The ceiling is now `< 8.0`, so core 7 can resolve. Dummy pins stay on core 6.x.
+
 ## [0.5.0] - 2026-11-12
 
 ### Added
