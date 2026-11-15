@@ -20,6 +20,7 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
     connection = ActiveRecord::Base.connection
 
     assert connection.column_exists?(:recording_studio_recordings, :root_recording_id)
+    assert connection.column_exists?(:recording_studio_events, :root_recording_id)
     assert connection.table_exists?(:recording_studio_accesses)
     assert connection.table_exists?(:recording_studio_attachable_attachments)
     assert connection.table_exists?(:active_storage_blobs)
@@ -65,6 +66,31 @@ class RecordingStudioDummyTest < ActiveSupport::TestCase
     assert_nil Current.actor
   ensure
     Current.actor = nil
+  end
+
+  test "writes allow a present actor and root lookup does not create" do
+    authorizer = RecordingStudio.configuration.authorize_write
+
+    assert_respond_to authorizer, :call
+    refute RecordingStudio.configuration.allow_unauthorized_writes
+    assert authorizer.call(actor: User.new, root_recording: nil)
+    refute authorizer.call(actor: nil, root_recording: nil)
+    refute_respond_to RecordingStudioAdmin.configuration, :site_admin_recording_resolver
+    assert_respond_to RecordingStudioAdmin.configuration, :access_recording_resolver
+
+    workspace = Workspace.create!(name: "Lookup #{SecureRandom.hex(4)}")
+    user = User.create!(
+      email: "lookup-#{SecureRandom.hex(4)}@example.com",
+      password: "Password123!",
+      password_confirmation: "Password123!"
+    )
+
+    assert_nil RecordingStudio.root_recording_for(workspace)
+    root = RecordingStudio.create_root_recording!(workspace, actor: user)
+    assert_equal root, RecordingStudio.root_recording_for(workspace)
+    assert_no_difference -> { RecordingStudio::Recording.count } do
+      assert_equal root, RecordingStudio.create_root_recording!(workspace, actor: user)
+    end
   end
 
   test "workspace opts into accessible without a template example mixin" do

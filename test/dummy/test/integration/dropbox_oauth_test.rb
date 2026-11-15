@@ -21,7 +21,7 @@ class DropboxOauthTest < ActionDispatch::IntegrationTest
     sign_in @user
     @workspace = Workspace.find_by(name: "Studio Workspace") || Workspace.find_or_create_by!(name: "Studio Workspace")
     Current.actor = @user
-    @root = RecordingStudio.root_recording_for(@workspace)
+    @root = RecordingStudio.create_root_recording!(@workspace, actor: @user)
     grant_workspace_access!(@root)
   end
 
