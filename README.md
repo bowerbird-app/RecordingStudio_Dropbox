@@ -111,21 +111,25 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.5.0"
+    tag: "v0.6.0"
 ```
 
-The gemspec requires RecordingStudioOauth `>= 0.17.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
+The gemspec requires Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
 
 This repo's dummy app pins:
 
 ```ruby
+gem "recording_studio",
+    github: "bowerbird-app/RecordingStudio",
+    tag: "v7.0.0"
+
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.21.8"
+    tag: "v0.22.0"
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
-    tag: "v0.23.0"
+    tag: "v0.28.0"
 ```
 
 ```bash
@@ -137,6 +141,8 @@ bin/rails generate recording_studio_attachable:migrations
 bin/rails generate recording_studio_dropbox:install
 bin/rails db:migrate
 ```
+
+Recording Studio 7 stores `root_recording_id` on `recording_studio_events`. Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` when that column is missing, then migrate again. `RecordingStudio.root_recording_for` only finds a root. Create one with `RecordingStudio.create_root_recording!(recordable, actor:)` and set `config.authorize_write`.
 
 Mount Oauth and Attachable:
 
@@ -180,4 +186,4 @@ Not exposed: `fetch_file` / `download`, `upload_file`, OAuth connect/disconnect,
 
 ## Version
 
-0.5.0
+0.6.0

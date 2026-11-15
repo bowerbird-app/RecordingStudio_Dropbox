@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-15
+
+### Changed
+- Recording Studio is now `>= 7.0`, `< 8.0`. RecordingStudioOauth is now `>= 0.22.0`, `< 1.0`.
+- Dummy and development pins move to Recording Studio `v7.0.0`, Oauth `v0.22.0`, Accessible `v0.44.0`, Admin `v2.16.0`, API `v0.24.0`, Logs `v0.8.0`, Root Switchable `v0.16.0`, Site Settings `v0.6.0`, Attachable `v0.28.0`, Moveable `v5.0.0`, Trashable `v0.17.0`, Metrics `v0.9.0`, Cache `v0.6.3`, Icons `v0.2.1`, and Flatpack `v0.1.376`.
+- Dummy seeds create workspace roots with `RecordingStudio.create_root_recording!`. `root_recording_for` only finds a root.
+- Dummy `config.authorize_write` allows a write when an actor is present, including a new root where `root_recording` is nil.
+- Dummy seeds read kept recordings with `Recording.kept`.
+- Dummy copies core migration `20261114090000_add_root_recording_id_to_recording_studio_events`.
+- Dummy locks Puma `8.1.0` and msgpack `>= 1.8.7`.
+
+### Upgrade notes
+- Bump to `0.6.0`. No Dropbox migration. Do not tag this PR; pin git tag `v0.6.0` when the release is cut.
+- Require Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`. A host still on core 6 cannot resolve this version.
+- `RecordingStudio.root_recording_for` only finds a root. Create one with `RecordingStudio.create_root_recording!(recordable, actor:)`. Set `config.authorize_write`. The first root is authorized with `root_recording` nil. Do not set `allow_unauthorized_writes`.
+- Copy core migration `20261114090000_add_root_recording_id_to_recording_studio_events` before writing events on Recording Studio 7.
+- Replace `recording_studio_trashable_kept_sql` with `Recording.kept`.
+- Development hosts that match this dummy should pin the tags above.
+
 ## [0.5.1] - 2026-11-15
 
 ### Changed

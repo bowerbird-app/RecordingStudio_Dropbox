@@ -13,7 +13,7 @@ class DropboxApiTest < ActionDispatch::IntegrationTest
     @viewer = create_user("viewer")
     Current.actor = @owner
     @workspace = Workspace.create!(name: "API #{SecureRandom.hex(4)}")
-    @root = RecordingStudio.root_recording_for(@workspace)
+    @root = RecordingStudio.create_root_recording!(@workspace, actor: @owner)
     bootstrap!(@root, @owner)
     @editor_access = grant!(@editor, :edit)
     @viewer_access = grant!(@viewer, :view)

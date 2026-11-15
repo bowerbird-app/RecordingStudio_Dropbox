@@ -18,7 +18,7 @@ class OauthTokenTest < ActiveSupport::TestCase
     )
     Current.actor = @user
     workspace = Workspace.create!(name: "Token Workspace #{SecureRandom.hex(4)}")
-    @root = RecordingStudio.root_recording_for(workspace)
+    @root = RecordingStudio.create_root_recording!(workspace, actor: @user)
     grant_workspace_access!(@root)
   end
 
