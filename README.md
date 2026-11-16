@@ -121,15 +121,15 @@ This repo's dummy app pins:
 ```ruby
 gem "recording_studio",
     github: "bowerbird-app/RecordingStudio",
-    tag: "v7.0.0"
+    tag: "v7.3.0"
 
 gem "recording_studio_oauth",
     github: "bowerbird-app/RecordingStudio_Oauth",
-    tag: "v0.22.0"
+    tag: "v0.25.0"
 
 gem "recording_studio_attachable",
     github: "bowerbird-app/RecordingStudio_attachable",
-    tag: "v0.28.0"
+    tag: "v0.31.0"
 ```
 
 ```bash
