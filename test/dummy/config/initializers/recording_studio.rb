@@ -7,13 +7,24 @@ RecordingStudio.configure do |config|
     "Folder",
     "Page",
     "RecordingStudioSiteSettings::SiteSetting",
-      "RecordingStudioAttachable::Attachment",
+    "RecordingStudioAttachable::Attachment",
     "RecordingStudio::Access",
-    "RecordingStudioApi::AdminApi",
     "RecordingStudioApi::ApiAccessToken",
     "RecordingStudioApi::ApiClient",
     "RecordingStudioApi::ApiCredential"
   ]
+
+  # API declares AdminApi only when admin_root_recordable_type_names names a
+  # loaded root. Register it in that same case. An empty list must not add it.
+  Rails.application.config.to_prepare do
+    next unless defined?(RecordingStudioApi)
+    next if Array(RecordingStudioApi.configuration.admin_root_recordable_type_names).blank?
+
+    types = RecordingStudio.configuration.recordable_types.map(&:to_s)
+    next if types.include?("RecordingStudioApi::AdminApi")
+
+    RecordingStudio.configuration.recordable_types = types + [ "RecordingStudioApi::AdminApi" ]
+  end
 
   # Require each configured ActiveRecord type to call recording_studio_recordable.
   config.require_recordable_declarations = true
