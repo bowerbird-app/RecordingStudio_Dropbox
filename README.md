@@ -111,7 +111,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.6.1"
+    tag: "v0.6.2"
 ```
 
 The gemspec requires Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
@@ -172,13 +172,13 @@ Seeds print that path.
 
 ## API and MCP
 
-When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
+When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools and shows each title as written. OpenAPI title and summary are the same string. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
 
-| Endpoint / MCP tool | HTTP | Wraps |
-| --- | --- | --- |
-| `dropbox.import` | `POST .../dropbox/import` | `RecordingStudioDropbox::Attachable::Import.remote_files` |
-| `dropbox.list` | `GET .../dropbox/list` | `RecordingStudioDropbox::Client#list` |
-| `dropbox.search` | `GET .../dropbox/search` | `RecordingStudioDropbox::Client#search` |
+| Endpoint / MCP tool | Title and summary | HTTP | Wraps |
+| --- | --- | --- | --- |
+| `dropbox.import` | Import from Dropbox | `POST .../dropbox/import` | `RecordingStudioDropbox::Attachable::Import.remote_files` |
+| `dropbox.list` | List Dropbox files | `GET .../dropbox/list` | `RecordingStudioDropbox::Client#list` |
+| `dropbox.search` | Search Dropbox | `GET .../dropbox/search` | `RecordingStudioDropbox::Client#search` |
 
 Each call takes `recording_id`. Import takes `attachments` (each needs a Dropbox `id`). List takes optional `path`, `cursor`, and `page_size`. Search takes `query` plus optional `cursor` and `page_size`.
 
@@ -186,4 +186,4 @@ Not exposed: `fetch_file` / `download`, `upload_file`, OAuth connect/disconnect,
 
 ## Version
 
-0.6.1
+0.6.2
