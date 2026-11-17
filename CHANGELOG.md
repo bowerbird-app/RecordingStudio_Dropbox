@@ -7,24 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-17
+
 ### Changed
 - Dummy pins move to Recording Studio `v7.3.0`, Oauth `v0.25.0`, Accessible `v0.45.1`, Admin `v2.18.0`, API `v1.2.1`, Attachable `v0.31.0`, Moveable `v6.0.0`, Trashable `v1.0.1`, Cache `v0.7.0`, Icons `v0.4.0`, and Flatpack `v0.1.377`. Logs `v0.8.0`, Metrics `v0.9.0`, Root Switchable `v0.16.0`, and Site Settings `v0.6.0` stay.
 - Dummy Accessible `admin_root_resolver` returns the kept Studio Workspace root.
 - Dummy registers `RecordingStudioApi::AdminApi` only when `admin_root_recordable_type_names` is present.
 - Dummy turns off API failed-auth rate limiting, matching the other dummy rate-limit switches.
 - Dummy locks Puma `8.1.1`.
-
-### Upgrade notes
-- No Dropbox migration. Recording Studio 7.2's `index_rs_events_on_timeline` is optional. Writes do not need it, and this dummy does not copy it.
-- Gemspec floors stay Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`.
-
-## [0.6.1] - 2026-11-17
-
-### Changed
 - `dropbox.list`, `dropbox.search`, and `dropbox.import` descriptions say what the tool does, where each input comes from, what an entry contains, and how the call fails. Tool names, parameters, auth, and return shape are unchanged.
 
 ### Upgrade notes
-- Bump to `0.6.1`. No Dropbox migration. Do not tag this PR; pin git tag `v0.6.1` when the release is cut.
+- Bump to `0.6.1`. No Dropbox migration.
+- No Dropbox migration. Recording Studio 7.2's `index_rs_events_on_timeline` is optional. Writes do not need it, and this dummy does not copy it.
+- Gemspec floors stay Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`.
 
 ## [0.6.0] - 2026-11-15
 
