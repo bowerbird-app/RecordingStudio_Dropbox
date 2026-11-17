@@ -62,6 +62,23 @@ class ApiTest < Minitest::Test
     end
   end
 
+  def test_each_dropbox_tool_and_parameter_has_a_description
+    captured = capture_registrations { RecordingStudioDropbox::Api.register! }
+
+    assert_equal %i[dropbox.import dropbox.list dropbox.search], captured.map(&:name)
+    captured.each do |endpoint|
+      description = endpoint.openapi.fetch(:description)
+      assert_kind_of String, description
+      refute_empty description.strip, endpoint.name.to_s
+
+      endpoint.input_contract.fetch(:fields).each do |name, field|
+        text = field.fetch(:description)
+        assert_kind_of String, text
+        refute_empty text.strip, "#{endpoint.name} #{name}"
+      end
+    end
+  end
+
   def test_excluded_operations_are_not_registered
     captured = capture_registrations { RecordingStudioDropbox::Api.register! }
     names = captured.map { |endpoint| endpoint.name.to_s }

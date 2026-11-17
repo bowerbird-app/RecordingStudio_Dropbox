@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "descriptions"
+
 module RecordingStudioDropbox
   module Api
     module Endpoints
@@ -8,18 +10,6 @@ module RecordingStudioDropbox
         dropbox.download dropbox.fetch_file dropbox.upload_file dropbox.connect
         dropbox.disconnect dropbox.bootstrap dropbox.register_oauth_provider
       ].freeze
-      RECORDING_ID = {
-        type: :string, required: true, allow_blank: false,
-        description: "Recording whose workspace Dropbox this call uses."
-      }.freeze
-      CURSOR = {
-        type: :string, required: false, allow_blank: true,
-        description: "Next page from a previous next_cursor."
-      }.freeze
-      PAGE_SIZE = {
-        type: :integer, required: false,
-        description: "How many entries to return. Defaults to the gem page_size."
-      }.freeze
 
       def self.openapi(name, description)
         { title: "Dropbox - #{name}", summary: "Dropbox - #{name}", description: description, tags: OPENAPI_TAGS }
@@ -28,44 +18,38 @@ module RecordingStudioDropbox
       DEFINITIONS = [
         {
           name: :"dropbox.import", http_verb: :post, path: "dropbox/import", handler: Import,
-          openapi: openapi(
-            "Import",
-            "Copy selected Dropbox files onto a recording. Same access as the Dropbox picker."
-          ),
+          openapi: openapi("Import", Descriptions::IMPORT),
           input_contract: {
             reject_unknown: true,
             fields: {
-              recording_id: RECORDING_ID,
-              attachments: {
-                type: :array, required: true, description: "Files to import. Each item needs a Dropbox id."
-              }
+              recording_id: Descriptions::IMPORT_RECORDING_ID,
+              attachments: Descriptions::ATTACHMENTS
             }
           }
         },
         {
           name: :"dropbox.list", http_verb: :get, path: "dropbox/list", handler: List,
-          openapi: openapi("List", "List files and folders in the workspace Dropbox. Same listing the picker uses."),
+          openapi: openapi("List", Descriptions::LIST),
           input_contract: {
             reject_unknown: true,
             fields: {
-              recording_id: RECORDING_ID,
-              path: {
-                type: :string, required: false, allow_blank: true,
-                description: "Folder path. Blank lists the root."
-              },
-              cursor: CURSOR, page_size: PAGE_SIZE
+              recording_id: Descriptions::LIST_RECORDING_ID,
+              path: Descriptions::PATH,
+              cursor: Descriptions::CURSOR,
+              page_size: Descriptions::PAGE_SIZE
             }
           }
         },
         {
           name: :"dropbox.search", http_verb: :get, path: "dropbox/search", handler: Search,
-          openapi: openapi("Search", "Search files in the workspace Dropbox. Same search the picker uses."),
+          openapi: openapi("Search", Descriptions::SEARCH),
           input_contract: {
             reject_unknown: true,
             fields: {
-              recording_id: RECORDING_ID,
-              query: { type: :string, required: true, allow_blank: false, description: "Text to search for." },
-              cursor: CURSOR, page_size: PAGE_SIZE
+              recording_id: Descriptions::LIST_RECORDING_ID,
+              query: Descriptions::QUERY,
+              cursor: Descriptions::CURSOR,
+              page_size: Descriptions::PAGE_SIZE
             }
           }
         }
