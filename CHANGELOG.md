@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-17
+
+### Changed
+- OpenAPI `title` and `summary` for `dropbox.import`, `dropbox.list`, and `dropbox.search` are action-first. MCP shows those titles as written. `dropbox.import` is "Import from Dropbox". `dropbox.list` is "List Dropbox files". `dropbox.search` is "Search Dropbox". Title and summary are the same string. Tool names, parameters, auth, and return shapes are unchanged.
+
+### Upgrade notes
+- Bump to `0.6.2`. No Dropbox migration.
+- Hosts that showed "Dropbox - Import", "Dropbox - List", or "Dropbox - Search" now show the action-first titles. Call the same tool names.
+
 ## [0.6.1] - 2026-11-17
 
 ### Changed

@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.6.1", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.6.2", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -402,6 +402,10 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "dropbox.import"
     assert_includes readme, "dropbox.list"
     assert_includes readme, "dropbox.search"
+    assert_includes readme, "Import from Dropbox"
+    assert_includes readme, "List Dropbox files"
+    assert_includes readme, "Search Dropbox"
+    assert_includes readme, "shows each title as written"
     assert_includes readme, "in-handler Attachable/Accessible upload-role check"
     assert_includes readme, "config.enabled"
     assert_includes readme, "config.client_id"
@@ -409,7 +413,8 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, "## Shared shape with Google Drive"
     assert_includes readme, "`search` is not folder-scoped: it has no `path:`."
     assert_includes readme, "does not take `content_type:`"
-    assert_includes readme, 'tag: "v0.6.1"'
+    assert_includes readme, 'tag: "v0.6.2"'
+    refute_includes readme, 'tag: "v0.6.1"'
     assert_includes readme, 'tag: "v7.3.0"'
     assert_includes readme, 'tag: "v0.25.0"'
     assert_includes readme, 'tag: "v0.31.0"'

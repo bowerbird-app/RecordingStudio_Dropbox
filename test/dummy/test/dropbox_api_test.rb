@@ -83,12 +83,16 @@ class DropboxApiTest < ActionDispatch::IntegrationTest
 
   test "each dropbox endpoint is an MCP tool and excluded operations stay off the catalog" do
     %i[public].each do |api|
-      %w[dropbox.import dropbox.list dropbox.search].each do |name|
+      {
+        "dropbox.import" => "Import from Dropbox",
+        "dropbox.list" => "List Dropbox files",
+        "dropbox.search" => "Search Dropbox"
+      }.each do |name, title|
         endpoint = RecordingStudioApi.registered_endpoint(name, api: api)
         assert endpoint, "expected #{name} on #{api}"
         assert_match MCP_TOOL_NAME, endpoint.name
-        assert_match(/\ADropbox - /, endpoint.openapi.fetch(:title))
-        assert_equal endpoint.openapi.fetch(:title), endpoint.openapi.fetch(:summary)
+        assert_equal title, endpoint.openapi.fetch(:title)
+        assert_equal title, endpoint.openapi.fetch(:summary)
       end
     end
 

@@ -11,14 +11,14 @@ module RecordingStudioDropbox
         dropbox.disconnect dropbox.bootstrap dropbox.register_oauth_provider
       ].freeze
 
-      def self.openapi(name, description)
-        { title: "Dropbox - #{name}", summary: "Dropbox - #{name}", description: description, tags: OPENAPI_TAGS }
+      def self.openapi(title, description)
+        { title: title, summary: title, description: description, tags: OPENAPI_TAGS }
       end
 
       DEFINITIONS = [
         {
           name: :"dropbox.import", http_verb: :post, path: "dropbox/import", handler: Import,
-          openapi: openapi("Import", Descriptions::IMPORT),
+          openapi: openapi("Import from Dropbox", Descriptions::IMPORT),
           input_contract: {
             reject_unknown: true,
             fields: {
@@ -29,7 +29,7 @@ module RecordingStudioDropbox
         },
         {
           name: :"dropbox.list", http_verb: :get, path: "dropbox/list", handler: List,
-          openapi: openapi("List", Descriptions::LIST),
+          openapi: openapi("List Dropbox files", Descriptions::LIST),
           input_contract: {
             reject_unknown: true,
             fields: {
@@ -42,7 +42,7 @@ module RecordingStudioDropbox
         },
         {
           name: :"dropbox.search", http_verb: :get, path: "dropbox/search", handler: Search,
-          openapi: openapi("Search", Descriptions::SEARCH),
+          openapi: openapi("Search Dropbox", Descriptions::SEARCH),
           input_contract: {
             reject_unknown: true,
             fields: {

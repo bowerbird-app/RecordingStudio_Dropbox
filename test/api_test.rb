@@ -50,13 +50,19 @@ class ApiTest < Minitest::Test
     )
   end
 
-  def test_registered_openapi_uses_dropbox_type_first_titles
+  def test_registered_openapi_uses_action_first_titles
     captured = capture_registrations { RecordingStudioDropbox::Api.register! }
+    expected = {
+      "dropbox.import" => "Import from Dropbox",
+      "dropbox.list" => "List Dropbox files",
+      "dropbox.search" => "Search Dropbox"
+    }
 
+    assert_equal(expected.keys, captured.map { |endpoint| endpoint.name.to_s })
     captured.each do |endpoint|
       assert_equal ["Dropbox"], endpoint.openapi.fetch(:tags)
-      title = endpoint.openapi.fetch(:title)
-      assert_match(/\ADropbox - /, title)
+      title = expected.fetch(endpoint.name.to_s)
+      assert_equal title, endpoint.openapi.fetch(:title)
       assert_equal title, endpoint.openapi.fetch(:summary)
       assert endpoint.openapi.fetch(:description).present?
     end
