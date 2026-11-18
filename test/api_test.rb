@@ -36,6 +36,20 @@ class ApiTest < Minitest::Test
     assert_includes engine, "RecordingStudioDropbox::Api.register!"
   end
 
+  def test_register_skips_endpoints_when_disabled_and_registers_them_when_enabled
+    with_dropbox_enabled(false) do
+      captured = capture_registrations { RecordingStudioDropbox::Api.register! }
+
+      assert_empty captured
+    end
+
+    with_dropbox_enabled(true) do
+      captured = capture_registrations { RecordingStudioDropbox::Api.register! }
+
+      assert_equal %i[dropbox.import dropbox.list dropbox.search], captured.map(&:name)
+    end
+  end
+
   def test_registers_import_list_and_search
     captured = capture_registrations { RecordingStudioDropbox::Api.register! }
 
@@ -268,6 +282,15 @@ class ApiTest < Minitest::Test
   end
 
   private
+
+  def with_dropbox_enabled(enabled)
+    configuration = RecordingStudioDropbox.configuration
+    previous = configuration.enabled
+    configuration.enabled = enabled
+    yield
+  ensure
+    configuration.enabled = previous
+  end
 
   def capture_registrations(&block)
     captured = []
