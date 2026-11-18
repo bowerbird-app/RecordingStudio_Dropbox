@@ -6,11 +6,12 @@ module RecordingStudioDropbox
     DEFAULT_SCOPES = %w[files.metadata.read files.content.read].freeze
 
     attr_reader :hooks
-    attr_accessor :enabled, :client_id, :page_size, :scopes
+    attr_accessor :enabled, :api_enabled, :client_id, :page_size, :scopes
 
     def initialize
       @hooks = RecordingStudio::Hooks.new
       @enabled = false
+      @api_enabled = true
       @client_id = nil
       @page_size = 25
       @scopes = DEFAULT_SCOPES.dup
@@ -18,6 +19,10 @@ module RecordingStudioDropbox
 
     def enabled?
       !!enabled
+    end
+
+    def api_enabled?
+      !!api_enabled
     end
 
     def chooser_configured?
@@ -32,6 +37,7 @@ module RecordingStudioDropbox
     # client_id is the public Chooser app key; redact it in inspect for family consistency.
     def inspect
       "#<#{self.class.name} enabled=#{enabled.inspect} " \
+        "api_enabled=#{api_enabled.inspect} " \
         "client_id=#{client_id.present? ? '[FILTERED]' : 'nil'} " \
         "page_size=#{page_size.inspect}>"
     end

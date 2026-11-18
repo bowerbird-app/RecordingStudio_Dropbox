@@ -21,15 +21,6 @@ class ApiTest < Minitest::Test
     keyword_init: true
   )
 
-  def setup
-    @dropbox_enabled_was = RecordingStudioDropbox.configuration.enabled
-    RecordingStudioDropbox.configuration.enabled = true
-  end
-
-  def teardown
-    RecordingStudioDropbox.configuration.enabled = @dropbox_enabled_was
-  end
-
   def test_gemspec_omits_recording_studio_api_runtime_dependency
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
 
@@ -45,17 +36,31 @@ class ApiTest < Minitest::Test
     assert_includes engine, "RecordingStudioDropbox::Api.register!"
   end
 
-  def test_register_skips_endpoints_when_disabled_and_registers_them_when_enabled
-    with_dropbox_enabled(false) do
+  def test_api_enabled_false_registers_nothing_and_true_registers_the_three_endpoints
+    with_dropbox_configuration(enabled: true, api_enabled: false) do
       captured = capture_registrations { RecordingStudioDropbox::Api.register! }
 
       assert_empty captured
     end
 
-    with_dropbox_enabled(true) do
+    with_dropbox_configuration(enabled: false, api_enabled: true) do
       captured = capture_registrations { RecordingStudioDropbox::Api.register! }
 
       assert_equal %i[dropbox.import dropbox.list dropbox.search], captured.map(&:name)
+    end
+  end
+
+  def test_api_enabled_does_not_change_attachable_provider_registration
+    with_dropbox_configuration(enabled: true, api_enabled: false, client_id: "real-dropbox-app-key") do
+      assert_equal [:dropbox], capture_upload_providers
+    end
+
+    with_dropbox_configuration(enabled: true, api_enabled: true, client_id: "real-dropbox-app-key") do
+      assert_equal [:dropbox], capture_upload_providers
+    end
+
+    with_dropbox_configuration(enabled: false, api_enabled: true, client_id: "real-dropbox-app-key") do
+      assert_empty capture_upload_providers
     end
   end
 
@@ -292,13 +297,38 @@ class ApiTest < Minitest::Test
 
   private
 
-  def with_dropbox_enabled(enabled)
+  def with_dropbox_configuration(enabled:, api_enabled:, client_id: RecordingStudioDropbox.configuration.client_id)
     configuration = RecordingStudioDropbox.configuration
-    previous = configuration.enabled
+    previous_enabled = configuration.enabled
+    previous_api_enabled = configuration.api_enabled
+    previous_client_id = configuration.client_id
     configuration.enabled = enabled
+    configuration.api_enabled = api_enabled
+    configuration.client_id = client_id
     yield
   ensure
-    configuration.enabled = previous
+    configuration.enabled = previous_enabled
+    configuration.api_enabled = previous_api_enabled
+    configuration.client_id = previous_client_id
+  end
+
+  def capture_upload_providers
+    captured = []
+    register = lambda do |key, **|
+      captured << key
+    end
+    initializer = RecordingStudioDropbox::Attachable::Engine.initializers.find do |item|
+      item.name == "recording_studio_dropbox.attachable.register_upload_provider"
+    end
+    config = Object.new
+    config.define_singleton_method(:to_prepare) { |&block| block.call }
+    app = Object.new
+    app.define_singleton_method(:config) { config }
+
+    RecordingStudioAttachable.stub(:register_upload_provider, register) do
+      initializer.block.call(app)
+    end
+    captured
   end
 
   def capture_registrations(&block)

@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.3] - 2026-11-18
 
-### Fixed
-- `config.enabled = false` skips registration of `dropbox.import`, `dropbox.list`, and `dropbox.search`. Attachable upload registration is unchanged.
+### Added
+- `config.api_enabled`, default true, with `api_enabled?`. `config.api_enabled = false` skips registration of `dropbox.import`, `dropbox.list`, and `dropbox.search`. Dropbox stays in Attachable. `config.enabled` does not change API registration.
 
 ### Upgrade notes
 - Bump to `0.6.3`. No Dropbox migration.
-- Set `config.enabled = true` to register `dropbox.import`, `dropbox.list`, and `dropbox.search`. `config.enabled = false` leaves those API endpoints and MCP tools unregistered.
+- Hosts keep the three MCP tools. Set `config.api_enabled = false` to hide them. Leave `config.enabled` as the Attachable switch.
 
 ## [0.6.2] - 2026-11-17
 
