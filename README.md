@@ -2,7 +2,7 @@
 
 This gem talks to the Dropbox HTTP API for Recording Studio. It lists folders, fetches metadata, downloads files, and uploads files. Files are copied into storage later. This gem does not link Dropbox files in place.
 
-Dropbox is a root plugin. A workspace admin connects it once for the workspace. Tokens live on RecordingStudioOauth outbound connections. The host registers the provider with `RecordingStudioDropbox.register_oauth_provider`. That call always sends `kind: :root`. A host cannot override it to `:user`. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page. When RecordingStudioApi is also loaded, it registers `dropbox.import`, `dropbox.list`, and `dropbox.search` as named API endpoints (MCP tools with the same names).
+Dropbox is a root plugin. A workspace admin connects it once for the workspace. Tokens live on RecordingStudioOauth outbound connections. The host registers the provider with `RecordingStudioDropbox.register_oauth_provider`. That call always sends `kind: :root`. A host cannot override it to `:user`. When RecordingStudioAttachable is loaded, this gem registers the Dropbox upload provider, Chooser, and file-list import page. When RecordingStudioApi is also loaded, it registers `dropbox.import`, `dropbox.list`, and `dropbox.search` as named API endpoints (MCP tools with the same names). `config.api_enabled = false` hides those three tools. Dropbox stays in Attachable.
 
 ## What you get
 
@@ -82,13 +82,14 @@ Turn it on in the host initializer. Attachable is optional; skip it if you only 
 ```ruby
 RecordingStudioDropbox.configure do |config|
   config.enabled = true
+  config.api_enabled = true
   config.client_id = "your-dropbox-app-key"
   config.page_size = 25
   config.scopes = %w[files.metadata.read files.content.read]
 end
 ```
 
-`enabled` and `client_id` are this gem's settings. `client_id` is the Dropbox app key for Chooser. Dummy values such as `dummy-dropbox-client-id` are ignored. Routes stay at `/recording_studio_attachable/dropbox`.
+`enabled` and `client_id` are this gem's settings. `client_id` is the Dropbox app key for Chooser. `config.api_enabled = false` hides the three MCP tools while Dropbox stays in Attachable. Dummy values such as `dummy-dropbox-client-id` are ignored. Routes stay at `/recording_studio_attachable/dropbox`.
 
 Connect uses Oauth outbound connections. Imports copy files through `RecordingStudioAttachable::Services::ImportRemoteFiles`. Chooser runs `Dropbox.choose` only from a user click. The file-list page uses Attachable's `providers/_remote_file_browser` for files and folders. Bootstrap `needs_auth` is the auth signal; `connect` is always the connect recipe.
 
@@ -111,7 +112,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.6.2"
+    tag: "v0.6.3"
 ```
 
 The gemspec requires Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
@@ -172,7 +173,7 @@ Seeds print that path.
 
 ## API and MCP
 
-When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. MCP lists them as tools and shows each title as written. OpenAPI title and summary are the same string. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
+When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. `config.api_enabled = false` hides the three MCP tools while Dropbox stays in Attachable. `config.enabled` does not change this registration. MCP lists them as tools and shows each title as written. OpenAPI title and summary are the same string. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
 
 | Endpoint / MCP tool | Title and summary | HTTP | Wraps |
 | --- | --- | --- | --- |
@@ -186,4 +187,4 @@ Not exposed: `fetch_file` / `download`, `upload_file`, OAuth connect/disconnect,
 
 ## Version
 
-0.6.2
+0.6.3

@@ -9,6 +9,8 @@ module RecordingStudioDropbox
       module_function
 
       def register!(api: :public)
+        return unless RecordingStudioDropbox.configuration.api_enabled?
+
         ENDPOINTS.each { |endpoint| register_endpoint!(endpoint, api: api) }
       end
 

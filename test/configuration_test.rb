@@ -31,6 +31,12 @@ class ConfigurationTest < Minitest::Test
 
     @configuration.client_id = "real-dropbox-app-key"
     assert_predicate @configuration, :available?
+
+    assert_predicate @configuration, :api_enabled?
+    @configuration.api_enabled = false
+    refute_predicate @configuration, :api_enabled?
+    assert_predicate @configuration, :enabled?
+    assert_predicate @configuration, :available?
     assert_equal 25, @configuration.page_size
     assert_equal RecordingStudioDropbox::OauthProvider::SCOPES, @configuration.scopes
     assert_equal RecordingStudioDropbox::Client::SCOPES, @configuration.scopes
@@ -44,5 +50,6 @@ class ConfigurationTest < Minitest::Test
     refute_includes inspected, "dropbox-chooser-app-key"
     assert_includes inspected, "[FILTERED]"
     assert_includes inspected, "client_id="
+    assert_includes inspected, "api_enabled=true"
   end
 end
