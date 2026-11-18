@@ -21,6 +21,15 @@ class ApiTest < Minitest::Test
     keyword_init: true
   )
 
+  def setup
+    @dropbox_enabled_was = RecordingStudioDropbox.configuration.enabled
+    RecordingStudioDropbox.configuration.enabled = true
+  end
+
+  def teardown
+    RecordingStudioDropbox.configuration.enabled = @dropbox_enabled_was
+  end
+
   def test_gemspec_omits_recording_studio_api_runtime_dependency
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
 
