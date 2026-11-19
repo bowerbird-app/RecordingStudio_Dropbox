@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-19
+
+### Changed
+- Development and dummy pins move to Recording Studio `v7.8.0`, Flatpack `v0.2.0`, Accessible `v0.58.0`, Admin `v2.20.0`, API `v1.21.2`, Attachable `v0.34.0`, Cache `v0.8.0`, Icons `v0.5.0`, Logs `v0.9.0`, Metrics `v0.10.0`, Moveable `v6.1.0`, Oauth `v0.26.0`, and Site Settings `v0.7.0`.
+- The root Gemfile moves Trashable `v0.17.0` to `v1.3.0`. The dummy moves Trashable `v1.0.1` to `v1.3.0` and Root Switchable `v0.16.0` to `v0.17.0`.
+- The root Gemfile moves API `v0.24.0` to `v1.21.2` and Moveable `v5.0.0` to `v6.1.0`.
+- Each moved pin is `~> major.minor` with a git tag.
+- Dummy drops the `flat_pack/heroicons` importmap pin. Icons `cloud` and `queue_list` stay; both resolve in Flatpack 0.2.
+- Dummy adds `config/recording_studio_api.yml` (`timeout: 5`) and API migration `20261117000024_add_owner_to_recording_studio_api_api_clients`.
+- Root lock moves `tailwind_merge` from `0.16.0` to `1.5.6` because Flatpack 0.2 requires `>= 1.5.2`. `view_component` stays `4.20.0`.
+
+### Upgrade notes
+- Bump to `0.7.0`. No Dropbox migration.
+- Hosts MUST run the Recording Studio 7.4, 7.5 and 7.7 migrations if they have not.
+- flat_pack 0.2.0 is supported; hosts moving to 0.2 must remove the manual `flat_pack/heroicons` importmap pin and any `flat-pack--icon` controller registration.
+- Gemspec floors stay Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`.
+
 ## [0.6.3] - 2026-11-18
 
 ### Added
@@ -239,6 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.7.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/compare/v0.6.3...v0.7.0
 [0.4.4]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.4
 [0.4.3]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.3
 [0.4.2]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.2
