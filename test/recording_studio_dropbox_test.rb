@@ -4,7 +4,7 @@ require "test_helper"
 
 class RecordingStudioDropboxTest < Minitest::Test
   def test_version_matches_release
-    assert_equal "0.7.0", ::RecordingStudioDropbox::VERSION
+    assert_equal "0.8.0", ::RecordingStudioDropbox::VERSION
     gemspec = File.read(File.expand_path("../recording_studio_dropbox.gemspec", __dir__))
     ruby_version = File.read(File.expand_path("../.ruby-version", __dir__)).strip
 
@@ -435,7 +435,7 @@ class RecordingStudioDropboxTest < Minitest::Test
     assert_includes readme, <<~PIN
       gem "recording_studio_dropbox",
           github: "bowerbird-app/RecordingStudio_Dropbox",
-          tag: "v0.7.0"
+          tag: "v0.8.0"
     PIN
     assert_includes readme, <<~PIN
       gem "recording_studio", "~> 7.8",

@@ -17,7 +17,7 @@ class ApiTest < Minitest::Test
   FakeRecording = Struct.new(:id, :recordable, keyword_init: true)
   FakeAttachment = Struct.new(:name, :attachment_kind, keyword_init: true)
   FakeEndpoint = Struct.new(
-    :name, :api, :http_verb, :path, :handler, :openapi, :input_contract,
+    :name, :api, :http_verb, :path, :handler, :openapi, :input_contract, :required_role,
     keyword_init: true
   )
 
@@ -76,6 +76,9 @@ class ApiTest < Minitest::Test
       [RecordingStudioDropbox::Api::Import, RecordingStudioDropbox::Api::List, RecordingStudioDropbox::Api::Search],
       captured.map(&:handler)
     )
+    assert_equal :edit, captured.fetch(0).required_role
+    assert_nil captured.fetch(1).required_role
+    assert_nil captured.fetch(2).required_role
   end
 
   def test_registered_openapi_uses_action_first_titles

@@ -18,6 +18,7 @@ module RecordingStudioDropbox
       DEFINITIONS = [
         {
           name: :"dropbox.import", http_verb: :post, path: "dropbox/import", handler: Import,
+          required_role: :edit,
           openapi: openapi("Import from Dropbox", Descriptions::IMPORT),
           input_contract: {
             reject_unknown: true,
