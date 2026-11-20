@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-20
+
+### Changed
+- `dropbox.import` declares `required_role: :edit`. Behavior is unchanged on API >= 1.21 (an unscoped POST already needed :edit); on API < 1.21 the key is ignored.
+
+### Upgrade notes
+- Bump to `0.8.0`. No Dropbox migration. No host change.
+
 ## [0.7.0] - 2026-11-19
 
 ### Changed
@@ -256,6 +264,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failed API calls raise `RequestError`, not `ApiError`. Paging uses `Page` and `cursor:`, not `Listing`. Download bytes are on `body`. `DownloadedFile#content_type` is always `nil`.
 - Call `list`, `fetch_file`, and `upload_file(path:, io:)`. There are no `list_folder`, `metadata`, `content:`, or `content_type:` aliases.
 
+[0.8.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/compare/v0.6.3...v0.7.0
 [0.4.4]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.4
 [0.4.3]: https://github.com/bowerbird-app/RecordingStudio_Dropbox/releases/tag/v0.4.3

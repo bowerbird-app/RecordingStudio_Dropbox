@@ -112,7 +112,7 @@ Add the gem from GitHub. It is not published to RubyGems.
 ```ruby
 gem "recording_studio_dropbox",
     github: "bowerbird-app/RecordingStudio_Dropbox",
-    tag: "v0.7.0"
+    tag: "v0.8.0"
 ```
 
 The gemspec requires Recording Studio `>= 7.0`, `< 8.0` and RecordingStudioOauth `>= 0.22.0`, `< 1.0`. Attachable is optional and is not a gemspec dependency.
@@ -173,7 +173,7 @@ Seeds print that path.
 
 ## API and MCP
 
-When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. `config.api_enabled = false` hides the three MCP tools while Dropbox stays in Attachable. `config.enabled` does not change this registration. MCP lists them as tools and shows each title as written. OpenAPI title and summary are the same string. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. These are wrappers. They do not add Dropbox behavior.
+When Recording Studio API is loaded next to Attachable, this gem registers three public endpoints. `config.api_enabled = false` hides the three MCP tools while Dropbox stays in Attachable. `config.enabled` does not change this registration. MCP lists them as tools and shows each title as written. OpenAPI title and summary are the same string. Authorization is the in-handler Attachable/Accessible upload-role check on the target recording. `dropbox.import` declares `required_role: :edit`. `dropbox.list` and `dropbox.search` do not declare a role. These are wrappers. They do not add Dropbox behavior.
 
 | Endpoint / MCP tool | Title and summary | HTTP | Wraps |
 | --- | --- | --- | --- |
@@ -187,4 +187,4 @@ Not exposed: `fetch_file` / `download`, `upload_file`, OAuth connect/disconnect,
 
 ## Version
 
-0.7.0
+0.8.0
